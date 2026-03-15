@@ -20,6 +20,39 @@ const createTransporter = (port) => {
 };
 
 export const sendEmail = async ({ to, subject, html }) => {
+  const resendKey = process.env.RESEND_API_KEY;
+  const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_USER || 'onboarding@resend.dev';
+
+  const sendViaResend = async () => {
+    await axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: resendFrom,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
+  };
+
+  // Prefer HTTPS-based provider on hosted platforms; SMTP remains fallback.
+  if (resendKey) {
+    try {
+      await sendViaResend();
+      return;
+    } catch (resendErr) {
+      const resendReason = resendErr?.response?.data || resendErr?.message || resendErr;
+      console.error('Resend failed, falling back to SMTP:', resendReason);
+    }
+  }
+
   const preferredPort = Number(process.env.EMAIL_PORT) || 587;
   const fallbackPort = preferredPort === 587 ? 465 : 587;
 
@@ -49,29 +82,12 @@ export const sendEmail = async ({ to, subject, html }) => {
       if (!fallbackTimedOut) throw fallbackErr;
     }
 
-    // Optional HTTPS fallback (avoids SMTP port issues on some hosts).
-    const resendKey = process.env.RESEND_API_KEY;
+    // Final HTTPS fallback if SMTP timed out on both ports.
     if (!resendKey) {
       throw new Error('SMTP timed out on both ports and RESEND_API_KEY is not configured');
     }
 
-    const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_USER || 'onboarding@resend.dev';
-    await axios.post(
-      'https://api.resend.com/emails',
-      {
-        from: resendFrom,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 15000,
-      }
-    );
+    await sendViaResend();
   }
 };
 

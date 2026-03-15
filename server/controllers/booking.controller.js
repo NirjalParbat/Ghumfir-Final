@@ -56,7 +56,8 @@ export const createBooking = async (req, res) => {
         });
         console.log(`Booking email sent to ${emailRecipient} for booking ${booking._id}`);
       } catch (emailErr) {
-        console.error('Email send failed (non-fatal):', emailErr.message);
+        const reason = emailErr?.response?.data || emailErr?.message || emailErr;
+        console.error('Email send failed (non-fatal):', reason);
       }
     })();
   } catch (error) {
