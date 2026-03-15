@@ -1,0 +1,52 @@
+services:
+  # ── Backend Web Service ──────────────────────────────────────────────────────
+  - type: web
+    name: ghumfir-backend
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: Ghumfir
+      - key: MAIL_LOGO_URL
+        sync: false
+      - key: KHALTI_SECRET_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: https://ghumfir-client.onrender.com
+
+  # ── Frontend Static Site ─────────────────────────────────────────────────────
+  - type: web
+    name: ghumfir-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://ghumfir-backend.onrender.com/api
