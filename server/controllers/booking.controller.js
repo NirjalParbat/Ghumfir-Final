@@ -37,25 +37,24 @@ export const createBooking = async (req, res) => {
     pkg.bookedSeats += numberOfPeople;
     await pkg.save();
 
+    const fullUser = await User.findById(req.user._id).select('name email');
+    const emailRecipient = fullUser?.email;
+    const emailHtml = emailRecipient ? bookingConfirmationEmail(fullUser, booking, pkg) : null;
+
     // Return quickly so payment flow is not blocked by email/network latency.
     res.status(201).json({ success: true, message: 'Booking created successfully', booking });
 
     // Send booking confirmation email in background (non-fatal).
     void (async () => {
       try {
-        const [fullUser, bookingWithPackage] = await Promise.all([
-          User.findById(req.user._id).select('name email'),
-          Booking.findById(booking._id).populate('package', 'title destination country images price duration category'),
-        ]);
+        if (!emailRecipient || !emailHtml) return;
 
-        if (!fullUser?.email || !bookingWithPackage?.package) return;
-
-        const html = bookingConfirmationEmail(fullUser, bookingWithPackage, bookingWithPackage.package);
         await sendEmail({
-          to: fullUser.email,
-          subject: `🏔️ Booking Confirmed – ${bookingWithPackage.package.title} | Ghumfir`,
-          html,
+          to: emailRecipient,
+          subject: `🏔️ Booking Confirmed – ${pkg.title} | Ghumfir`,
+          html: emailHtml,
         });
+        console.log(`Booking email sent to ${emailRecipient} for booking ${booking._id}`);
       } catch (emailErr) {
         console.error('Email send failed (non-fatal):', emailErr.message);
       }
