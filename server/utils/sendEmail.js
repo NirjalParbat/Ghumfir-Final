@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import axios from 'axios';
 
 const createTransporter = (port) => {
   const normalizedPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
@@ -39,7 +40,38 @@ export const sendEmail = async ({ to, subject, html }) => {
     const isTimeout = msg.includes('timeout') || err?.code === 'ETIMEDOUT';
     if (!isTimeout) throw err;
 
-    await send(fallbackPort);
+    try {
+      await send(fallbackPort);
+      return;
+    } catch (fallbackErr) {
+      const fallbackMsg = String(fallbackErr?.message || '').toLowerCase();
+      const fallbackTimedOut = fallbackMsg.includes('timeout') || fallbackErr?.code === 'ETIMEDOUT';
+      if (!fallbackTimedOut) throw fallbackErr;
+    }
+
+    // Optional HTTPS fallback (avoids SMTP port issues on some hosts).
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+      throw new Error('SMTP timed out on both ports and RESEND_API_KEY is not configured');
+    }
+
+    const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_USER || 'onboarding@resend.dev';
+    await axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: resendFrom,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
   }
 };
 
