@@ -37,25 +37,29 @@ export const createBooking = async (req, res) => {
     pkg.bookedSeats += numberOfPeople;
     await pkg.save();
 
-    await booking.populate([
-      { path: 'package', select: 'title destination country images price duration category' },
-      { path: 'user', select: 'name email' },
-    ]);
-
-    // Send booking confirmation email (non-blocking)
-    try {
-      const fullUser = await User.findById(req.user._id).select('name email');
-      const html = bookingConfirmationEmail(fullUser, booking, booking.package);
-      await sendEmail({
-        to: fullUser.email,
-        subject: `🏔️ Booking Confirmed – ${booking.package.title} | Ghumfir`,
-        html,
-      });
-    } catch (emailErr) {
-      console.error('Email send failed (non-fatal):', emailErr.message);
-    }
-
+    // Return quickly so payment flow is not blocked by email/network latency.
     res.status(201).json({ success: true, message: 'Booking created successfully', booking });
+
+    // Send booking confirmation email in background (non-fatal).
+    void (async () => {
+      try {
+        const [fullUser, bookingWithPackage] = await Promise.all([
+          User.findById(req.user._id).select('name email'),
+          Booking.findById(booking._id).populate('package', 'title destination country images price duration category'),
+        ]);
+
+        if (!fullUser?.email || !bookingWithPackage?.package) return;
+
+        const html = bookingConfirmationEmail(fullUser, bookingWithPackage, bookingWithPackage.package);
+        await sendEmail({
+          to: fullUser.email,
+          subject: `🏔️ Booking Confirmed – ${bookingWithPackage.package.title} | Ghumfir`,
+          html,
+        });
+      } catch (emailErr) {
+        console.error('Email send failed (non-fatal):', emailErr.message);
+      }
+    })();
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
