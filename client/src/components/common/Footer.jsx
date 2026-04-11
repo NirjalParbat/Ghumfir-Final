@@ -6,7 +6,6 @@ const QUICK_LINKS = [
   ['Home', '/'],
   ['Packages', '/packages'],
   ['My Bookings', '/bookings'],
-  ['Wishlist', '/wishlist'],
 ];
 
 const SUPPORT_LINKS = [

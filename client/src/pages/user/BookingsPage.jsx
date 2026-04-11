@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { bookingAPI, reviewAPI } from '../api/index.js';
+import { bookingAPI, reviewAPI } from '../../api/index.js';
 import { MapPin, Calendar, Users, ChevronDown, Star } from 'lucide-react';
-import LoadingSpinner from '../components/common/LoadingSpinner.jsx';
-import StarRating from '../components/common/StarRating.jsx';
+import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
+import StarRating from '../../components/common/StarRating.jsx';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-700',

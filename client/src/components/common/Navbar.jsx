@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Menu, X, Heart, User, LogOut, LayoutDashboard, ChevronDown, Globe } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, ChevronDown, Globe } from 'lucide-react';
 import logoImg from '../../images/logo.png';
 
 export default function Navbar() {
@@ -54,11 +54,6 @@ export default function Navbar() {
             <NavLink to="/packages" className={navLinkClass}>
               <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />Packages</span>
             </NavLink>
-            {user && (
-              <NavLink to="/wishlist" className={navLinkClass}>
-                <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />Wishlist</span>
-              </NavLink>
-            )}
           </div>
 
           {/* ── Auth Area ────────────────────────────── */}
@@ -145,10 +140,6 @@ export default function Navbar() {
           </Link>
           {user ? (
             <>
-              <Link to="/wishlist" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-text hover:bg-brand-bg">
-                <Heart className="w-4 h-4 text-brand-muted" /> Wishlist
-              </Link>
               <Link to="/profile" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-text hover:bg-brand-bg">
                 <User className="w-4 h-4 text-brand-muted" /> Profile

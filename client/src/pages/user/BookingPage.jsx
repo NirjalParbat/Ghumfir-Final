@@ -1,12 +1,12 @@
 ﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { packageAPI, bookingAPI, paymentAPI } from '../api/index.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { packageAPI, bookingAPI, paymentAPI } from '../../api/index.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import {
   MapPin, Clock, Users, CreditCard, Wallet, DollarSign,
   CheckCircle, AlertCircle, ArrowRight, ShieldCheck,
 } from 'lucide-react';
-import LoadingSpinner from '../components/common/LoadingSpinner.jsx';
+import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
 
 const STEPS = ['Trip Details', 'Payment', 'Confirmation'];
 
@@ -87,7 +87,6 @@ export default function BookingPage() {
   if (loading) return <LoadingSpinner />;
   if (!pkg) return null;
 
-  const maxPeople = pkg.maxPeople - (pkg.bookedSeats || 0);
   const coverImage =
     pkg.images?.[0]?.url ||
     'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600&q=80';
@@ -103,7 +102,7 @@ export default function BookingPage() {
     <div className="min-h-screen bg-brand-bg py-10">
       <div className="max-w-5xl mx-auto px-4">
 
-        {/* â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+     
         <div className="mb-8">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-text">
             Complete Your Booking
@@ -113,7 +112,7 @@ export default function BookingPage() {
           </p>
         </div>
 
-        {/* â”€â”€ Step indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+     
         <div className="flex items-center mb-10">
           {STEPS.map((label, i) => {
             const current = i + 1;
@@ -154,7 +153,7 @@ export default function BookingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* â”€â”€ Main Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        
           <div className="lg:col-span-2">
 
             {/* STEP 1: Trip Details */}
@@ -185,12 +184,8 @@ export default function BookingPage() {
                       value={form.numberOfPeople}
                       onChange={handleChange}
                       min={1}
-                      max={maxPeople}
                       className="input"
                     />
-                    <p className="text-xs text-brand-muted mt-1.5">
-                      {maxPeople} seats available
-                    </p>
                   </div>
 
                   <div className="form-group">
@@ -411,7 +406,6 @@ export default function BookingPage() {
             )}
           </div>
 
-          {/* â”€â”€ Package Summary sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="lg:col-span-1">
             <div className="surface overflow-hidden sticky top-24">
               <div className="relative h-44">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { reviewAPI } from '../../api/index.js';
-import { Star, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import StarRating from '../../components/common/StarRating.jsx';
 
 export default function ManageReviews() {
@@ -23,6 +23,14 @@ export default function ManageReviews() {
       alert('Delete failed');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6">
+        <p className="text-sm text-gray-500">Loading reviews...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6">

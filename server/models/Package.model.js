@@ -57,15 +57,6 @@ const packageSchema = new mongoose.Schema(
       required: [true, 'Duration in days is required'],
       min: 1,
     },
-    maxPeople: {
-      type: Number,
-      required: [true, 'Max people allowed is required'],
-      min: 1,
-    },
-    bookedSeats: {
-      type: Number,
-      default: 0,
-    },
     images: [
       {
         url: String,
@@ -116,12 +107,5 @@ packageSchema.pre('validate', function (next) {
 
   next();
 });
-
-// Virtual: available seats
-packageSchema.virtual('availableSeats').get(function () {
-  return this.maxPeople - this.bookedSeats;
-});
-
-packageSchema.set('toJSON', { virtuals: true });
 
 export default mongoose.model('Package', packageSchema);

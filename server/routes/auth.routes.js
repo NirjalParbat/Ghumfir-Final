@@ -1,26 +1,38 @@
+/**
+ * Authentication Routes
+ * 
+ * Endpoints:
+ * POST   /register - Create new user account (rate limited: 10/hour)
+ * POST   /login - Authenticate user and get JWT token (rate limited: 10/15min)
+ * POST   /forgot-password - Request password reset email (rate limited: 10/15min)
+ * PUT    /reset-password - Update password with reset token (rate limited: 10/15min)
+ * GET    /me - Get current user profile (protected)
+ * PUT    /update-profile - Update user details (protected)
+ * PUT    /change-password - Change password with old password verification (protected)
+ * POST   /google - Google OAuth callback (rate limited: 30/15min)
+ * GET    /google/callback - Google OAuth redirect (rate limited: 30/15min)
+ */
+
 import express from 'express';
 import passport from 'passport';
 import generateToken from '../utils/generateToken.js';
 import {
   register,
   login,
-  verifyEmail,
-  resendVerification,
-  forgotPassword,
-  resetPassword,
   getMe,
   updateProfile,
   changePassword,
-} from '../controllers/auth.controller.js';
+  forgotPassword,
+  resetPassword,
+} from '../controllers/authController.js';
 import { protect } from '../middleware/auth.middleware.js';
 import {
   registerValidation,
   loginValidation,
-  tokenValidation,
-  emailValidation,
-  resetPasswordValidation,
   updateProfileValidation,
   changePasswordValidation,
+  emailValidation,
+  resetPasswordValidation,
 } from '../middleware/validation.middleware.js';
 import { createRateLimiter } from '../middleware/rateLimit.middleware.js';
 
@@ -40,13 +52,6 @@ const loginLimiter = createRateLimiter({
   message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
 });
 
-// 5 password reset / resend-verification requests per hour per IP
-const sensitiveActionLimiter = createRateLimiter({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
-  message: { success: false, message: 'Too many requests. Please try again in an hour.' },
-});
-
 const googleAuthLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -55,10 +60,8 @@ const googleAuthLimiter = createRateLimiter({
 
 router.post('/register', registerLimiter, registerValidation, register);
 router.post('/login', loginLimiter, loginValidation, login);
-router.post('/verify-email', tokenValidation, verifyEmail);
-router.post('/resend-verification', sensitiveActionLimiter, emailValidation, resendVerification);
-router.post('/forgot-password', sensitiveActionLimiter, emailValidation, forgotPassword);
-router.post('/reset-password', sensitiveActionLimiter, resetPasswordValidation, resetPassword);
+router.post('/forgot-password', loginLimiter, emailValidation, forgotPassword);
+router.put('/reset-password', loginLimiter, resetPasswordValidation, resetPassword);
 router.get('/me', protect, getMe);
 router.put('/update-profile', protect, updateProfileValidation, updateProfile);
 router.put('/change-password', protect, changePasswordValidation, changePassword);

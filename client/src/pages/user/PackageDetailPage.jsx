@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Clock, Users, Star, Heart, ChevronRight, CheckCircle, XCircle, Calendar } from 'lucide-react';
-import { packageAPI, reviewAPI } from '../api/index.js';
-import { useAuth } from '../context/AuthContext.jsx';
-import LoadingSpinner from '../components/common/LoadingSpinner.jsx';
-import StarRating from '../components/common/StarRating.jsx';
+import { MapPin, Clock, Star, ChevronRight, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { packageAPI, reviewAPI } from '../../api/index.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
+import StarRating from '../../components/common/StarRating.jsx';
 
 export default function PackageDetailPage() {
   const { id } = useParams();
@@ -32,8 +32,6 @@ export default function PackageDetailPage() {
   const images = pkg.images?.length > 0
     ? pkg.images.map((i) => i.url)
     : ['https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=800&q=80'];
-
-  const availableSeats = pkg.maxPeople - (pkg.bookedSeats || 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,14 +71,6 @@ export default function PackageDetailPage() {
             <div className="bg-white rounded-2xl p-6 shadow-md">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <h1 className="font-display text-xl sm:text-3xl font-bold text-gray-900">{pkg.title}</h1>
-                {user && (
-                  <button
-                    onClick={() => packageAPI.toggleWishlist(pkg._id)}
-                    className="p-2 rounded-xl border border-gray-200 hover:border-red-300 hover:text-red-500 transition-colors"
-                  >
-                    <Heart className="w-5 h-5" />
-                  </button>
-                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-5">
@@ -91,10 +81,6 @@ export default function PackageDetailPage() {
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4 text-primary-500" />
                   {pkg.duration} days
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4 text-primary-500" />
-                  Max {pkg.maxPeople} people
                 </div>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -222,10 +208,8 @@ export default function PackageDetailPage() {
                   <span className="font-semibold text-gray-800">{pkg.duration} Days</span>
                 </div>
                 <div className="flex items-center justify-between text-sm p-3 bg-gray-50 rounded-xl">
-                  <span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4" />Available Seats</span>
-                  <span className={`font-semibold ${availableSeats < 5 ? 'text-red-500' : 'text-gray-800'}`}>
-                    {availableSeats} / {pkg.maxPeople}
-                  </span>
+                  <span className="text-gray-500 flex items-center gap-1.5"><Calendar className="w-4 h-4" />Category</span>
+                  <span className="font-semibold text-gray-800">{pkg.category}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm p-3 bg-gray-50 rounded-xl">
                   <span className="text-gray-500 flex items-center gap-1.5"><Calendar className="w-4 h-4" />Available Dates</span>
@@ -233,18 +217,12 @@ export default function PackageDetailPage() {
                 </div>
               </div>
 
-              {availableSeats > 0 ? (
-                <button
-                  onClick={() => user ? navigate(`/book/${pkg._id}`) : navigate('/login')}
-                  className="btn-primary w-full text-center text-base py-3"
-                >
-                  {user ? 'Book Now' : 'Login to Book'}
-                </button>
-              ) : (
-                <button disabled className="w-full py-3 bg-gray-200 text-gray-500 rounded-xl font-semibold cursor-not-allowed">
-                  Fully Booked
-                </button>
-              )}
+              <button
+                onClick={() => user ? navigate(`/book/${pkg._id}`) : navigate('/login')}
+                className="btn-primary w-full text-center text-base py-3"
+              >
+                {user ? 'Book Now' : 'Login to Book'}
+              </button>
 
               <p className="text-xs text-gray-400 text-center mt-3">Free cancellation within 24 hours of booking</p>
             </div>

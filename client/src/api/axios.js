@@ -7,13 +7,6 @@ const getFixedBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL?.trim();
   if (envUrl) return envUrl;
 
-  // Production safety net: if env injection is missing on hosted builds,
-  // still route API traffic to the deployed backend.
-  const host = window.location.hostname;
-  if (host === 'www.ghumfir.me' || host === 'ghumfir.me') {
-    return 'https://ghumfir-backend.onrender.com/api';
-  }
-
   return null;
 };
 

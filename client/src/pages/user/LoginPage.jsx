@@ -1,9 +1,21 @@
+/**
+ * LoginPage Component
+ * 
+ * User authentication page with email/password and OAuth options.
+ * Features:
+ * - Email and password login with validation
+ * - Google OAuth authentication via GoogleSignInButton
+ * - Forgot password link for account recovery
+ * - Redirect to intended page after successful login
+ * - Error handling and display
+ */
+
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import logoImg from '../images/logo.png';
-import GoogleSignInButton from '../components/common/GoogleSignInButton.jsx';
+import logoImg from '../../images/logo.png';
+import GoogleSignInButton from '../../components/common/GoogleSignInButton.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -103,12 +115,13 @@ export default function LoginPage() {
             <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base disabled:opacity-60">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-xs font-semibold text-primary-600 hover:text-accent-500">
+                Forgot password?
+              </Link>
+            </div>
           </form>
-
-          <p className="text-right text-sm mt-3">
-            <Link to="/forgot-password" className="text-primary-600 hover:underline">Forgot password?</Link>
-          </p>
-
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-200" /></div>
             <div className="relative flex justify-center text-xs text-gray-400"><span className="bg-white px-3">or continue with</span></div>

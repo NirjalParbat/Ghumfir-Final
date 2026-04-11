@@ -27,15 +27,6 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // Defense-in-depth: reject even if a token was somehow issued before verification
-    if (!req.user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Email not verified.',
-        code: 'EMAIL_NOT_VERIFIED',
-      });
-    }
-
     if (!req.user.isActive) {
       return res.status(403).json({
         success: false,

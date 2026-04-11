@@ -7,21 +7,19 @@ import MainLayout from './layouts/MainLayout.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 
 // Public Pages
-import HomePage from './pages/HomePage.jsx';
-import PackagesPage from './pages/PackagesPage.jsx';
-import PackageDetailPage from './pages/PackageDetailPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
-import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
-import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
-import OAuthCallbackPage from './pages/OAuthCallbackPage.jsx';
+import HomePage from './pages/user/HomePage.jsx';
+import Tours from './pages/user/Tours.jsx';
+import PackageDetailPage from './pages/user/PackageDetailPage.jsx';
+import LoginPage from './pages/user/LoginPage.jsx';
+import RegisterPage from './pages/user/RegisterPage.jsx';
+import OAuthCallbackPage from './pages/user/OAuthCallbackPage.jsx';
+import ForgotPasswordPage from './pages/user/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/user/ResetPasswordPage.jsx';
 
 // Protected Pages
-import BookingPage from './pages/BookingPage.jsx';
-import WishlistPage from './pages/WishlistPage.jsx';
-import BookingsPage from './pages/BookingsPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
+import BookingPage from './pages/user/BookingPage.jsx';
+import BookingsPage from './pages/user/BookingsPage.jsx';
+import ProfilePage from './pages/user/ProfilePage.jsx';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -38,18 +36,16 @@ export default function App() {
           {/* Public Routes */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/packages" element={<PackagesPage />} />
+            <Route path="/packages" element={<Tours />} />
             <Route path="/packages/:id" element={<PackageDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
             {/* Protected User Routes */}
             <Route path="/book/:id" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
-            <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           </Route>

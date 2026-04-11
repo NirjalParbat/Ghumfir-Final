@@ -65,27 +65,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Register no longer returns a token — email verification is required first.
   const register = async (userData) => {
     const { data } = await authAPI.register(userData);
-    return data;
-  };
-
-  // Called after the user clicks the link in their verification email.
-  const verifyEmail = async (token) => {
-    const { data } = await authAPI.verifyEmail({ token });
-    _persistSession(data.token, data.user);
-    return data;
-  };
-
-  const forgotPassword = async (email) => {
-    const { data } = await authAPI.forgotPassword({ email });
-    return data;
-  };
-
-  // Called after the user submits their new password from the reset link.
-  const resetPassword = async (token, newPassword) => {
-    const { data } = await authAPI.resetPassword({ token, newPassword });
     _persistSession(data.token, data.user);
     return data;
   };
@@ -120,9 +101,6 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    verifyEmail,
-    forgotPassword,
-    resetPassword,
     loginWithToken,
     refreshUser,
     isAdmin: user?.role === 'admin',

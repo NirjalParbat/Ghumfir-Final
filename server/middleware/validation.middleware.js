@@ -1,10 +1,19 @@
 import { body, param, query, validationResult } from 'express-validator';
 
+/**
+ * Removes HTML tags from string input to prevent XSS attacks
+ * @param {any} value - Input value to sanitize
+ * @returns {any} Sanitized string or original value if not a string
+ */
 const stripTags = (value) => {
   if (typeof value !== 'string') return value;
   return value.replace(/<[^>]*>/g, '').trim();
 };
 
+/**
+ * Express middleware to handle validation errors from express-validator
+ * Returns 400 with error details if validation fails
+ */
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) return next();
@@ -21,6 +30,10 @@ export const mongoIdParam = (name = 'id') => [
   handleValidationErrors,
 ];
 
+/**
+ * Validates user registration input
+ * Rules: name (2-80 chars), email (valid email), password (8+ chars, letters, numbers), phone (optional, max 30)
+ */
 export const registerValidation = [
   body('name').isString().trim().isLength({ min: 2, max: 80 }).withMessage('Name must be 2-80 characters').customSanitizer(stripTags),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -52,6 +65,10 @@ export const emailValidation = [
   handleValidationErrors,
 ];
 
+/**
+ * Validates password reset input
+ * Rules: token (20-512 chars hex string), newPassword (8+ chars, letters, numbers)
+ */
 export const resetPasswordValidation = [
   body('token').isString().isLength({ min: 20, max: 512 }).withMessage('Token is invalid'),
   body('newPassword')
@@ -143,6 +160,7 @@ export const packageFilterValidation = [
   query('minRating').optional().isFloat({ min: 0, max: 5 }).toFloat(),
   query('featured').optional().isIn(['true', 'false']),
   query('sort').optional().isIn(['-createdAt', 'createdAt', 'price', '-price', 'rating', '-rating', 'duration', '-duration']),
+  query('sortPrice').optional().isIn(['asc', 'desc']),
   query('page').optional().isInt({ min: 1, max: 10000 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   handleValidationErrors,

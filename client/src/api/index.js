@@ -1,13 +1,20 @@
 import API from './axios.js';
 
-// Auth
+/**
+ * API methods for authentication
+ * - register: Create new user account
+ * - login: Authenticate user and get JWT token
+ * - forgotPassword: Request password reset email
+ * - resetPassword: Set new password using reset token
+ * - getMe: Fetch current user profile
+ * - updateProfile: Update user profile details
+ * - changePassword: Change password (requires old password)
+ */
 export const authAPI = {
   register: (data) => API.post('/auth/register', data),
   login: (data) => API.post('/auth/login', data),
-  verifyEmail: (data) => API.post('/auth/verify-email', data),
-  resendVerification: (data) => API.post('/auth/resend-verification', data),
   forgotPassword: (data) => API.post('/auth/forgot-password', data),
-  resetPassword: (data) => API.post('/auth/reset-password', data),
+  resetPassword: (data) => API.put('/auth/reset-password', data),
   getMe: () => API.get('/auth/me'),
   updateProfile: (data) => API.put('/auth/update-profile', data),
   changePassword: (data) => API.put('/auth/change-password', data),
@@ -16,12 +23,12 @@ export const authAPI = {
 // Packages
 export const packageAPI = {
   getAll: (params) => API.get('/packages', { params }),
+  getAdminAll: () => API.get('/packages/admin/all'),
   getFeatured: () => API.get('/packages/featured'),
   getById: (id) => API.get(`/packages/${id}`),
   create: (data) => API.post('/packages', data),
   update: (id, data) => API.put(`/packages/${id}`, data),
   delete: (id) => API.delete(`/packages/${id}`),
-  toggleWishlist: (id) => API.post(`/packages/${id}/wishlist`),
 };
 
 // Bookings

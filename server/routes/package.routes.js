@@ -1,8 +1,8 @@
 import express from 'express';
 import {
-  getPackages, getPackageById, createPackage,
-  updatePackage, deletePackage, toggleWishlist, getFeaturedPackages,
-} from '../controllers/package.controller.js';
+  getTours, getPackageById, createPackage,
+  updatePackage, deletePackage, getFeaturedPackages, getAllPackagesAdmin,
+} from '../controllers/tourController.js';
 import { protect, adminOnly } from '../middleware/auth.middleware.js';
 import { mongoIdParam, packageFilterValidation } from '../middleware/validation.middleware.js';
 import { createRateLimiter } from '../middleware/rateLimit.middleware.js';
@@ -15,18 +15,12 @@ const publicReadLimiter = createRateLimiter({
   message: { success: false, message: 'Too many requests. Please slow down.' },
 });
 
-const wishlistLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { success: false, message: 'Too many wishlist actions. Please try later.' },
-});
-
-router.get('/', publicReadLimiter, packageFilterValidation, getPackages);
+router.get('/', publicReadLimiter, packageFilterValidation, getTours);
 router.get('/featured', publicReadLimiter, getFeaturedPackages);
+router.get('/admin/all', protect, adminOnly, getAllPackagesAdmin);
 router.get('/:id', publicReadLimiter, mongoIdParam('id'), getPackageById);
 router.post('/', protect, adminOnly, createPackage);
 router.put('/:id', protect, adminOnly, mongoIdParam('id'), updatePackage);
 router.delete('/:id', protect, adminOnly, mongoIdParam('id'), deletePackage);
-router.post('/:id/wishlist', protect, wishlistLimiter, mongoIdParam('id'), toggleWishlist);
 
 export default router;

@@ -4,16 +4,16 @@ import {
   Search, MapPin, Star, TrendingUp, Shield, Headphones,
   ChevronRight, Compass, Clock, Users, ArrowRight, CheckCircle,
 } from 'lucide-react';
-import { packageAPI } from '../api/index.js';
-import PackageCard from '../components/common/PackageCard.jsx';
-import LoadingSpinner from '../components/common/LoadingSpinner.jsx';
+import { packageAPI } from '../../api/index.js';
+import PackageCard from '../../components/common/PackageCard.jsx';
+import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=1800&q=90';
 
 const DESTINATIONS = [
   { name: 'Kathmandu', image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=400&q=80' },
   { name: 'Pokhara',   image: 'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=400&q=80' },
-  { name: 'Chitwan',   image: 'https://images.unsplash.com/photo-1616596885897-c67b4cdaf69a?w=400&q=80' },
+  { name: 'Chitwan',   image: 'https://www.chitwanjungleguides.com/wp-content/uploads/2019/01/jeep-safari-in-chitwan-national-park.jpg' },
   { name: 'Everest',   image: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=400&q=80' },
 ];
 

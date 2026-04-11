@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     Promise.all([
       bookingAPI.getStats(),
-      packageAPI.getAll({ limit: 100 }),
+      packageAPI.getAdminAll(),
       bookingAPI.getAll({ limit: 5 }),
       userAPI.getAll(),
     ]).then(([statsRes, pkgRes, bookRes, userRes]) => {
@@ -231,9 +231,6 @@ export default function AdminDashboard() {
                     <div className="text-right shrink-0">
                       <div className="text-sm font-bold text-primary-600">
                         NPR {pkg.price?.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-brand-muted">
-                        {pkg.bookedSeats || 0}/{pkg.maxPeople}
                       </div>
                     </div>
                   </div>

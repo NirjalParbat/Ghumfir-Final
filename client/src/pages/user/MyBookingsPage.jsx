@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiCalendar, FiUsers, FiMapPin, FiStar, FiX } from "react-icons/fi";
-import { bookingAPI, reviewAPI } from "../api/index.js";
+import { bookingAPI, reviewAPI } from "../../api/index.js";
 import toast from "react-hot-toast";
 
 const statusColors = {

@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -54,10 +55,11 @@ passport.use(
         // New user — assign a random unguessable password so the account cannot
         // be accessed via the regular password login path.
         const randomPassword = crypto.randomBytes(32).toString('hex');
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
         user = await User.create({
           name: profile.displayName || email.split('@')[0],
           email,
-          password: randomPassword,
+          password: hashedPassword,
           avatar: profile.photos?.[0]?.value || '',
           isEmailVerified: true,
         });

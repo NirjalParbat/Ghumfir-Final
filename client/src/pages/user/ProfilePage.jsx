@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
-import { useAuth } from '../context/AuthContext.jsx';
-import { authAPI } from '../api/index.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { authAPI } from '../../api/index.js';
 import { User, Mail, Phone, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function ProfilePage() {

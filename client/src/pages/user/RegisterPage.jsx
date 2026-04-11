@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import logoImg from '../images/logo.png';
-import GoogleSignInButton from '../components/common/GoogleSignInButton.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import logoImg from '../../images/logo.png';
+import GoogleSignInButton from '../../components/common/GoogleSignInButton.jsx';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -12,7 +12,6 @@ export default function RegisterPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [registered, setRegistered] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +25,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register({ name: form.name, email: form.email, phone: form.phone, password: form.password });
-      setRegistered(true);
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -51,17 +50,7 @@ export default function RegisterPage() {
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-text mb-2">Create Account</h1>
           <p className="text-brand-muted mb-8">Join Ghumfir and start exploring</p>
 
-          {registered ? (
-            <div className="flex flex-col items-center text-center gap-3 py-6">
-              <CheckCircle className="w-14 h-14 text-green-500" />
-              <h2 className="font-display text-xl font-bold text-gray-900">Check your inbox!</h2>
-              <p className="text-sm text-gray-500 max-w-xs">
-                We sent a verification link to <strong>{form.email}</strong>. Click it to activate your account before logging in.
-              </p>
-              <Link to="/login" className="mt-4 btn-primary px-6">Go to Login</Link>
-            </div>
-          ) : (
-            <>
+          <>
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl mb-5 text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -111,8 +100,7 @@ export default function RegisterPage() {
             Already have an account?{' '}
             <Link to="/login" className="text-primary-600 font-semibold hover:text-accent-500">Sign in</Link>
           </p>
-            </>
-          )}
+          </>
         </div>
       </div>
     </div>

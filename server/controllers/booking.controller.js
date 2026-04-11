@@ -12,14 +12,6 @@ export const createBooking = async (req, res) => {
     const pkg = await Package.findById(packageId);
     if (!pkg) return res.status(404).json({ success: false, message: 'Package not found' });
 
-    // Check seat availability
-    if (pkg.bookedSeats + numberOfPeople > pkg.maxPeople) {
-      return res.status(400).json({
-        success: false,
-        message: `Only ${pkg.maxPeople - pkg.bookedSeats} seats available`,
-      });
-    }
-
     const totalPrice = pkg.price * numberOfPeople;
 
     const booking = await Booking.create({
@@ -33,33 +25,20 @@ export const createBooking = async (req, res) => {
       contactPhone,
     });
 
-    // Reserve seats
-    pkg.bookedSeats += numberOfPeople;
-    await pkg.save();
-
-    const fullUser = await User.findById(req.user._id).select('name email');
-    const emailRecipient = fullUser?.email;
-    const emailHtml = emailRecipient ? bookingConfirmationEmail(fullUser, booking, pkg) : null;
-
-    // Return quickly so payment flow is not blocked by email/network latency.
-    res.status(201).json({ success: true, message: 'Booking created successfully', booking });
-
-    // Send booking confirmation email in background (non-fatal).
-    void (async () => {
+    const user = await User.findById(req.user._id).select('name email');
+    if (user?.email) {
       try {
-        if (!emailRecipient || !emailHtml) return;
-
         await sendEmail({
-          to: emailRecipient,
-          subject: `🏔️ Booking Confirmed – ${pkg.title} | Ghumfir`,
-          html: emailHtml,
+          to: user.email,
+          subject: `Booking Confirmed - ${pkg.title}`,
+          html: bookingConfirmationEmail(user, booking, pkg),
         });
-        console.log(`Booking email sent to ${emailRecipient} for booking ${booking._id}`);
-      } catch (emailErr) {
-        const reason = emailErr?.response?.data || emailErr?.message || emailErr;
-        console.error('Email send failed (non-fatal):', reason);
+      } catch (emailError) {
+        console.error('booking email error:', emailError);
       }
-    })();
+    }
+
+    res.status(201).json({ success: true, message: 'Booking created successfully', booking });
   } catch (error) {
     console.error('createBooking error:', error);
     res.status(500).json({ success: false, message: 'Failed to create booking.' });
@@ -119,11 +98,6 @@ export const cancelBooking = async (req, res) => {
 
     booking.bookingStatus = 'cancelled';
     await booking.save();
-
-    // Free up seats
-    await Package.findByIdAndUpdate(booking.package, {
-      $inc: { bookedSeats: -booking.numberOfPeople },
-    });
 
     res.json({ success: true, message: 'Booking cancelled', booking });
   } catch (error) {

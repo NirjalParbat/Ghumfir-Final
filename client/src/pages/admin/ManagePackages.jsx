@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { packageAPI } from '../../api/index.js';
-import { Plus, Edit2, Trash2, Star, Users, MapPin, Search, Upload, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, Star, MapPin, Search, Upload, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { uploadAPI } from '../../api/index.js';
 
 const EMPTY_ITINERARY_DAY = { day: 1, title: '', description: '', accommodation: '', meals: '' };
 
 const EMPTY_FORM = {
   title: '', destination: '', country: '', category: 'Adventure', description: '',
-  price: '', duration: '', maxPeople: '', currency: 'NPR',
+  price: '', duration: '', currency: 'NPR',
   highlights: '', includes: '', excludes: '', featured: false, isActive: true,
   images: [{ url: '', public_id: '' }],
   itinerary: [],
@@ -109,7 +109,6 @@ export default function ManagePackages() {
         ...form,
         price: Number(form.price),
         duration: Number(form.duration),
-        maxPeople: Number(form.maxPeople),
         highlights: form.highlights ? form.highlights.split('\n').filter(Boolean) : [],
         includes: form.includes ? form.includes.split('\n').filter(Boolean) : [],
         excludes: form.excludes ? form.excludes.split('\n').filter(Boolean) : [],
@@ -170,7 +169,7 @@ export default function ManagePackages() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['Package', 'Category', 'Price', 'Seats', 'Rating', 'Status', 'Actions'].map((h) => (
+                {['Package', 'Category', 'Price', 'Rating', 'Status', 'Actions'].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -193,9 +192,6 @@ export default function ManagePackages() {
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-600">{pkg.category}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900">NPR {pkg.price?.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
-                    <div className="flex items-center gap-1"><Users className="w-3 h-3" />{pkg.bookedSeats || 0}/{pkg.maxPeople}</div>
-                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 text-xs">
                       <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
@@ -221,7 +217,7 @@ export default function ManagePackages() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400 text-sm">No packages found</td></tr>
+                <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">No packages found</td></tr>
               )}
             </tbody>
           </table>
@@ -262,10 +258,6 @@ export default function ManagePackages() {
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Duration (days) *</label>
                   <input type="number" value={form.duration} onChange={(e) => setForm(p => ({ ...p, duration: e.target.value }))} className="input" required min={1} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Max People *</label>
-                  <input type="number" value={form.maxPeople} onChange={(e) => setForm(p => ({ ...p, maxPeople: e.target.value }))} className="input" required min={1} />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Package Images</label>

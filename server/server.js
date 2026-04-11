@@ -24,7 +24,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
-app.set('trust proxy', 1);
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
@@ -67,13 +66,6 @@ const trackSuspiciousTraffic = (ip, statusCode) => {
 // Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.)
 app.use(helmet());
 
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
-    return res.status(400).json({ success: false, message: 'HTTPS is required.' });
-  }
-  next();
-});
-
 // Prevent NoSQL injection via sanitisation of req.body / req.query / req.params
 app.use(mongoSanitize());
 
@@ -83,7 +75,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 10 * 60 * 1000, // 10 minutes — just enough for OAuth redirect round-trip
@@ -180,7 +172,7 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to MongoDB and start server
-const preferredPort = Number(process.env.PORT) || 8080;
+const preferredPort = 8080;
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
