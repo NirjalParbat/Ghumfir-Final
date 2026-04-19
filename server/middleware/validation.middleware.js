@@ -114,7 +114,7 @@ export const createBookingValidation = [
 
 export const bookingListValidation = [
   query('page').optional().isInt({ min: 1, max: 10000 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 1000 }).toInt(),
   query('status').optional().isIn(['pending', 'confirmed', 'cancelled', 'completed']),
   handleValidationErrors,
 ];
@@ -163,5 +163,65 @@ export const packageFilterValidation = [
   query('sortPrice').optional().isIn(['asc', 'desc']),
   query('page').optional().isInt({ min: 1, max: 10000 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  handleValidationErrors,
+];
+
+const validTextRegex = /^[A-Za-z][A-Za-z0-9\s\-',()]*$/;
+
+export const createPackageValidation = [
+  body('title')
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage('Package title must be 2-120 characters')
+    .matches(validTextRegex)
+    .withMessage('Title must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses')
+    .customSanitizer(stripTags),
+  body('destination')
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage('Destination must be 2-120 characters')
+    .matches(validTextRegex)
+    .withMessage('Destination must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses')
+    .customSanitizer(stripTags),
+  body('country').isString().trim().isLength({ min: 2, max: 80 }).withMessage('Country must be 2-80 characters').matches(validTextRegex).withMessage('Country must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses').customSanitizer(stripTags),
+  body('category').isIn(['Adventure', 'Cultural', 'Beach', 'Mountain', 'City', 'Wildlife', 'Heritage', 'Pilgrimage']).withMessage('Invalid category'),
+  body('description').isString().trim().isLength({ min: 20, max: 4000 }).withMessage('Description must be 20-4000 characters').matches(validTextRegex).withMessage('Description must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses').customSanitizer(stripTags),
+  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number').toFloat(),
+  body('duration').isInt({ min: 1 }).withMessage('Duration must be at least 1 day').toInt(),
+  body('currency').optional({ values: 'falsy' }).isString().isLength({ max: 10 }).withMessage('Currency is invalid').customSanitizer(stripTags),
+  body('featured').optional().isBoolean().withMessage('featured must be true/false').toBoolean(),
+  body('isActive').optional().isBoolean().withMessage('isActive must be true/false').toBoolean(),
+  handleValidationErrors,
+];
+
+export const updatePackageValidation = [
+  body('title')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage('Package title must be 2-120 characters')
+    .matches(validTextRegex)
+    .withMessage('Title must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses')
+    .customSanitizer(stripTags),
+  body('destination')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage('Destination must be 2-120 characters')
+    .matches(validTextRegex)
+    .withMessage('Destination must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses')
+    .customSanitizer(stripTags),
+  body('country').optional().isString().trim().isLength({ min: 2, max: 80 }).withMessage('Country must be 2-80 characters').matches(validTextRegex).withMessage('Country must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses').customSanitizer(stripTags),
+  body('category').optional().isIn(['Adventure', 'Cultural', 'Beach', 'Mountain', 'City', 'Wildlife', 'Heritage', 'Pilgrimage']).withMessage('Invalid category'),
+  body('description').optional().isString().trim().isLength({ min: 20, max: 4000 }).withMessage('Description must be 20-4000 characters').matches(validTextRegex).withMessage('Description must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses').customSanitizer(stripTags),
+  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number').toFloat(),
+  body('duration').optional().isInt({ min: 1 }).withMessage('Duration must be at least 1 day').toInt(),
+  body('currency').optional({ values: 'falsy' }).isString().isLength({ max: 10 }).withMessage('Currency is invalid').customSanitizer(stripTags),
+  body('featured').optional().isBoolean().withMessage('featured must be true/false').toBoolean(),
+  body('isActive').optional().isBoolean().withMessage('isActive must be true/false').toBoolean(),
   handleValidationErrors,
 ];

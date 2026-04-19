@@ -27,7 +27,7 @@ const probeHealth = async (baseUrl) => {
   }
 };
 
-const discoverApiBase = async () => {
+export const discoverApiBase = async () => {
   const fixedBaseUrl = getFixedBaseUrl();
   if (fixedBaseUrl) return fixedBaseUrl;
 

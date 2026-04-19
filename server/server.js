@@ -172,7 +172,7 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to MongoDB and start server
-const preferredPort = 8080;
+const preferredPort = Number(process.env.PORT) || 8080;
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
@@ -187,18 +187,10 @@ mongoose
 
     const startServer = (port) => {
       const server = app.listen(port, () => {
-        if (port !== preferredPort) {
-          console.warn(`⚠️ Port ${preferredPort} was busy, switched to ${port}`);
-        }
         console.log(`🚀 Ghumfir server running on port ${port}`);
       });
 
       server.on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          startServer(port + 1);
-          return;
-        }
-
         console.error('❌ Server startup error:', err.message);
         process.exit(1);
       });

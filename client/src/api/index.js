@@ -13,6 +13,7 @@ import API from './axios.js';
 export const authAPI = {
   register: (data) => API.post('/auth/register', data),
   login: (data) => API.post('/auth/login', data),
+  googleDevLogin: () => API.post('/auth/google/dev'),
   forgotPassword: (data) => API.post('/auth/forgot-password', data),
   resetPassword: (data) => API.put('/auth/reset-password', data),
   getMe: () => API.get('/auth/me'),
@@ -40,6 +41,7 @@ export const bookingAPI = {
   getAll: (params) => API.get('/bookings/admin/all', { params }),
   getStats: () => API.get('/bookings/admin/stats'),
   updateStatus: (id, data) => API.put(`/bookings/${id}/status`, data),
+  getTopDestinations: (limit = 4) => API.get('/bookings/destinations/top', { params: { limit } }),
 };
 
 // Reviews

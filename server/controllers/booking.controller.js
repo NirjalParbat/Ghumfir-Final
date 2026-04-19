@@ -97,6 +97,9 @@ export const cancelBooking = async (req, res) => {
     }
 
     booking.bookingStatus = 'cancelled';
+    if (booking.paymentStatus === 'pending') {
+      booking.paymentStatus = 'failed';
+    }
     await booking.save();
 
     res.json({ success: true, message: 'Booking cancelled', booking });
@@ -110,6 +113,11 @@ export const cancelBooking = async (req, res) => {
 // @route   GET /api/bookings/admin/all
 export const getAllBookings = async (req, res) => {
   try {
+    await Booking.updateMany(
+      { bookingStatus: 'cancelled', paymentStatus: 'pending' },
+      { $set: { paymentStatus: 'failed' } }
+    );
+
     const { status, page = 1, limit = 10 } = req.query;
     const pageNumber = Number(page);
     const pageLimit = Number(limit);
@@ -135,19 +143,35 @@ export const getAllBookings = async (req, res) => {
 export const updateBookingStatus = async (req, res) => {
   try {
     const { bookingStatus, paymentStatus } = req.body;
-    const updates = {};
-    if (bookingStatus !== undefined) updates.bookingStatus = bookingStatus;
-    if (paymentStatus !== undefined) updates.paymentStatus = paymentStatus;
-    if (!Object.keys(updates).length) {
+    const hasBookingStatus = bookingStatus !== undefined;
+    const hasPaymentStatus = paymentStatus !== undefined;
+
+    if (!hasBookingStatus && !hasPaymentStatus) {
       return res.status(400).json({ success: false, message: 'No valid fields provided for update' });
     }
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    ).populate('user', 'name email').populate('package', 'title');
 
+    const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    const nextBookingStatus = hasBookingStatus ? bookingStatus : booking.bookingStatus;
+    if (hasPaymentStatus && paymentStatus === 'paid' && nextBookingStatus === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Cancelled bookings cannot be marked as paid' });
+    }
+    if (hasPaymentStatus && paymentStatus === 'refunded' && nextBookingStatus !== 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Only cancelled bookings can be marked as refunded' });
+    }
+
+    if (hasBookingStatus) booking.bookingStatus = bookingStatus;
+    if (hasPaymentStatus) {
+      booking.paymentStatus = paymentStatus;
+    } else if (nextBookingStatus === 'cancelled' && booking.paymentStatus === 'pending') {
+      booking.paymentStatus = 'failed';
+    }
+    await booking.save();
+
+    await booking.populate('user', 'name email');
+    await booking.populate('package', 'title');
+
     res.json({ success: true, message: 'Booking status updated', booking });
   } catch (error) {
     console.error('updateBookingStatus error:', error);
@@ -178,5 +202,67 @@ export const getBookingStats = async (req, res) => {
   } catch (error) {
     console.error('getBookingStats error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch booking stats.' });
+  }
+};
+
+// @desc    Get top destinations by booking count (public)
+// @route   GET /api/bookings/destinations/top
+export const getTopDestinations = async (req, res) => {
+  try {
+    const { limit = 4 } = req.query;
+
+    const topDestinations = await Booking.aggregate([
+      { $match: { bookingStatus: { $ne: 'cancelled' } } },
+      {
+        $lookup: {
+          from: 'packages',
+          localField: 'package',
+          foreignField: '_id',
+          as: 'packageData',
+        },
+      },
+      { $unwind: '$packageData' },
+      {
+        $group: {
+          _id: {
+            destination: '$packageData.destination',
+            packageId: '$packageData._id',
+          },
+          count: { $sum: 1 },
+          destination: { $first: '$packageData.destination' },
+          packageId: { $first: '$packageData._id' },
+          packageTitle: { $first: '$packageData.title' },
+          packageCountry: { $first: '$packageData.country' },
+        },
+      },
+      { $sort: { count: -1 } },
+      {
+        $group: {
+          _id: '$destination',
+          destination: { $first: '$destination' },
+          packageId: { $first: '$packageId' },
+          packageTitle: { $first: '$packageTitle' },
+          packageCountry: { $first: '$packageCountry' },
+          bookingCount: { $first: '$count' },
+        },
+      },
+      { $sort: { bookingCount: -1 } },
+      { $limit: Number(limit) },
+      {
+        $project: {
+          _id: 0,
+          destination: 1,
+          packageId: 1,
+          packageTitle: 1,
+          packageCountry: 1,
+          bookingCount: 1,
+        },
+      },
+    ]);
+
+    res.json({ success: true, destinations: topDestinations });
+  } catch (error) {
+    console.error('getTopDestinations error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch top destinations.' });
   }
 };

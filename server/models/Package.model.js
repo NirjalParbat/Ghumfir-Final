@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { sanitizeText, sanitizeStringArray } from '../utils/sanitizeText.js';
 
+const validText = /^[A-Za-z][A-Za-z0-9\s\-',()]*$/;
+
 const itinerarySchema = new mongoose.Schema({
   day: { type: Number, required: true },
   title: { type: String, required: true },
@@ -23,16 +25,28 @@ const packageSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Package title is required'],
       trim: true,
+      validate: {
+        validator: (value) => validText.test((value || '').trim()),
+        message: 'Package title must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses',
+      },
     },
     destination: {
       type: String,
       required: [true, 'Destination is required'],
       trim: true,
+      validate: {
+        validator: (value) => validText.test((value || '').trim()),
+        message: 'Destination must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses',
+      },
     },
     country: {
       type: String,
       required: [true, 'Country is required'],
       trim: true,
+      validate: {
+        validator: (value) => validText.test((value || '').trim()),
+        message: 'Country must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses',
+      },
     },
     category: {
       type: String,
@@ -42,6 +56,10 @@ const packageSchema = new mongoose.Schema(
     description: {
       type: String,
       required: [true, 'Description is required'],
+      validate: {
+        validator: (value) => validText.test((value || '').trim()),
+        message: 'Description must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses',
+      },
     },
     price: {
       type: Number,

@@ -4,18 +4,21 @@ import {
   Search, MapPin, Star, TrendingUp, Shield, Headphones,
   ChevronRight, Compass, Clock, Users, ArrowRight, CheckCircle,
 } from 'lucide-react';
-import { packageAPI } from '../../api/index.js';
+import { packageAPI, bookingAPI } from '../../api/index.js';
 import PackageCard from '../../components/common/PackageCard.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=1800&q=90';
 
-const DESTINATIONS = [
-  { name: 'Kathmandu', image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=400&q=80' },
-  { name: 'Pokhara',   image: 'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=400&q=80' },
-  { name: 'Chitwan',   image: 'https://www.chitwanjungleguides.com/wp-content/uploads/2019/01/jeep-safari-in-chitwan-national-park.jpg' },
-  { name: 'Everest',   image: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=400&q=80' },
-];
+// Destination images mapping
+const DESTINATION_IMAGES = {
+  'Kathmandu': 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=400&q=80',
+  'Pokhara': 'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=400&q=80',
+  'Chitwan': 'https://www.chitwanjungleguides.com/wp-content/uploads/2019/01/jeep-safari-in-chitwan-national-park.jpg',
+  'Everest': 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=400&q=80',
+  'Annapurna': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
+  'Ilam': 'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=400&q=80',
+};
 
 const FEATURES = [
   { icon: Shield,      title: 'Trusted & Safe',    desc: 'All guides are certified. Every package is vetted for safety and quality.' },
@@ -34,27 +37,22 @@ const STATS = [
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featured, setFeatured] = useState([]);
-  const [destinationTourCounts, setDestinationTourCounts] = useState({});
+  const [topDestinations, setTopDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [featuredRes, ...destinationRes] = await Promise.all([
+        const [featuredRes, destRes] = await Promise.all([
           packageAPI.getFeatured(),
-          ...DESTINATIONS.map((dest) => packageAPI.getAll({ search: dest.name, page: 1, limit: 1 })),
+           bookingAPI.getTopDestinations(4),
         ]);
 
         setFeatured(featuredRes.data.packages || []);
-
-        const counts = DESTINATIONS.reduce((acc, dest, index) => {
-          acc[dest.name] = destinationRes[index]?.data?.total || 0;
-          return acc;
-        }, {});
-        setDestinationTourCounts(counts);
+        setTopDestinations(destRes.data.destinations || []);
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching home data:', error);
       } finally {
         setLoading(false);
       }
@@ -110,7 +108,7 @@ export default function HomePage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search destinations, tours, activitiesâ€¦"
+                placeholder="Search destinations, tours, activities"
                 className="flex-1 text-brand-text text-sm outline-none bg-transparent placeholder:text-brand-muted py-1.5"
               />
             </div>
@@ -150,15 +148,15 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
-            {DESTINATIONS.map((dest) => (
+             {topDestinations.map((dest) => (
               <Link
-                key={dest.name}
-                to={`/packages?search=${dest.name}`}
+                 key={dest.destination}
+                to={dest.packageId ? `/packages/${dest.packageId}` : `/packages?search=${dest.destination}`}
                 className="relative h-48 sm:h-60 md:h-72 rounded-2xl overflow-hidden group"
               >
                 <img
-                  src={dest.image}
-                  alt={dest.name}
+                   src={DESTINATION_IMAGES[dest.destination] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80'}
+                   alt={dest.destination}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"
                 />
                 {/* gradient overlay */}
@@ -167,10 +165,11 @@ export default function HomePage() {
                 <div className="absolute inset-0 ring-2 ring-secondary-400 ring-opacity-0 group-hover:ring-opacity-60 rounded-2xl transition-all duration-300" />
 
                 <div className="absolute bottom-4 left-4 text-white">
-                  <div className="font-display font-bold text-lg sm:text-xl leading-tight">{dest.name}</div>
+                   <div className="font-display font-bold text-lg sm:text-xl leading-tight">{dest.packageTitle || dest.destination}</div>
+                  <div className="text-xs text-white/80 mt-0.5">{dest.destination}</div>
                   <div className="flex items-center gap-1 text-xs text-white/75 mt-0.5">
                     <Clock className="w-3 h-3" />
-                    {destinationTourCounts[dest.name] || 0} {destinationTourCounts[dest.name] === 1 ? 'tour' : 'tours'}
+                     {dest.bookingCount || 0} {dest.bookingCount === 1 ? 'booking' : 'bookings'}
                   </div>
                 </div>
                 <div className="absolute top-3 right-3 glass rounded-full px-2.5 py-1 text-xs text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1">
@@ -182,9 +181,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* 
           FEATURED PACKAGES
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+       */}
       <section className="py-16 sm:py-24 bg-brand-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-12 gap-4">
@@ -275,9 +274,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* 
           CTA BAND
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+       */}
       <section className="py-16 sm:py-20 overflow-hidden relative">
         {/* Background */}
         <div className="absolute inset-0 bg-primary-600" />
@@ -287,7 +286,7 @@ export default function HomePage() {
         <div className="relative max-w-3xl mx-auto px-4 text-center text-white">
           <p className="section-label text-secondary-300 mx-auto justify-center mb-4">
             <Users className="w-3.5 h-3.5" />
-            10,000+ Happy Travelers
+            100+ Happy Travelers
           </p>
           <h2 className="font-display text-3xl sm:text-5xl font-bold mb-5 leading-tight">
             Ready to Explore Nepal?

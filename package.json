@@ -8,11 +8,10 @@
     "client": "npm --prefix client run dev",
     "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
     "start": "npm run server",
-    "seed": "node server/utils/seedAdmin.js",
+    "seed": "node server/seedAdmin.js",
     "install:all": "npm --prefix server install && npm --prefix client install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "pdfkit": "^0.18.0"
+    "concurrently": "^8.2.2"
   }
 }

@@ -1,26 +1,32 @@
+import { useState } from 'react';
+import { discoverApiBase } from '../../api/axios.js';
+
 /**
  * Redirects the browser to the backend Google OAuth entry point.
  * The backend handles the consent screen and, on success, redirects
  * to /auth/callback?token=<jwt> on the frontend.
  */
-const getGoogleAuthURL = () => {
-  // Use the cached API base from the auto-discovery mechanism
-  const cached = localStorage.getItem('ghumfir_api_base');
-  if (cached) return `${cached}/auth/google`;
-
-  const envUrl = import.meta.env.VITE_API_URL?.trim();
-  if (envUrl) return `${envUrl}/auth/google`;
-
-  // Fallback for local development
-  return 'http://localhost:8080/api/auth/google';
-};
 
 export default function GoogleSignInButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const baseUrl = await discoverApiBase();
+      window.location.href = `${baseUrl}/auth/google`;
+    } catch (error) {
+      console.error('Failed to start Google sign-in:', error);
+      window.location.href = '/login?error=google_failed';
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => { window.location.href = getGoogleAuthURL(); }}
-      className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm"
+      onClick={handleGoogleSignIn}
+      disabled={loading}
+      className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {/* Google "G" logo */}
       <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -43,7 +49,7 @@ export default function GoogleSignInButton() {
           />
         </g>
       </svg>
-      Sign in with Google
+      {loading ? 'Connecting to Google...' : 'Sign in with Google'}
     </button>
   );
 }

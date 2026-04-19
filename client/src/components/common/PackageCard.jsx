@@ -30,6 +30,7 @@ export default function PackageCard({ pkg }) {
           <span className="text-xs font-semibold text-brand-text">{pkg.rating?.toFixed(1) || '0.0'}</span>
           <span className="text-xs text-brand-muted">({pkg.numReviews || 0})</span>
         </div>
+
       </div>
 
       {/* ── Body ──────────────────────────────────── */}

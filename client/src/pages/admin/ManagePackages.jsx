@@ -14,6 +14,7 @@ const EMPTY_FORM = {
 };
 
 const CATEGORIES = ['Adventure', 'Cultural', 'Beach', 'Mountain', 'City', 'Wildlife', 'Heritage', 'Pilgrimage'];
+const VALID_TEXT_REGEX = /^[A-Za-z][A-Za-z0-9\s\-',()]*$/;
 
 export default function ManagePackages() {
   const [packages, setPackages] = useState([]);
@@ -22,6 +23,7 @@ export default function ManagePackages() {
   const [editPkg, setEditPkg] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [search, setSearch] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [itineraryOpen, setItineraryOpen] = useState(false);
@@ -85,6 +87,7 @@ export default function ManagePackages() {
   const openCreate = () => {
     setEditPkg(null);
     setForm(EMPTY_FORM);
+    setFormErrors({});
     setModal(true);
   };
 
@@ -97,12 +100,49 @@ export default function ManagePackages() {
       excludes: pkg.excludes?.join('\n') || '',
       itinerary: pkg.itinerary || [],
     });
+    setFormErrors({});
     setItineraryOpen((pkg.itinerary?.length || 0) > 0);
     setModal(true);
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!form.title?.trim()) {
+      errors.title = 'Title is required.';
+    } else if (!VALID_TEXT_REGEX.test(form.title.trim())) {
+      errors.title = 'Title must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses. No special symbols (@, %, #, $, etc.).';
+    }
+
+    if (!form.destination?.trim()) {
+      errors.destination = 'Destination is required.';
+    } else if (!VALID_TEXT_REGEX.test(form.destination.trim())) {
+      errors.destination = 'Destination must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses. No special symbols (@, %, #, $, etc.).';
+    }
+
+    if (!form.country?.trim()) {
+      errors.country = 'Country is required.';
+    } else if (!VALID_TEXT_REGEX.test(form.country.trim())) {
+      errors.country = 'Country must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses. No special symbols (@, %, #, $, etc.).';
+    }
+
+    if (!form.description?.trim()) {
+      errors.description = 'Description is required.';
+    } else if (!VALID_TEXT_REGEX.test(form.description.trim())) {
+      errors.description = 'Description must start with a letter and contain only letters, numbers, spaces, hyphens, apostrophes, commas, or parentheses. No special symbols (@, %, #, $, etc.).';
+    }
+    if (!form.price || Number(form.price) < 0) errors.price = 'Price must be 0 or greater.';
+    if (!form.duration || Number(form.duration) < 1) errors.duration = 'Duration must be at least 1 day.';
+
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmitting(true);
     try {
       const payload = {
@@ -124,6 +164,14 @@ export default function ManagePackages() {
       fetchPackages();
       setModal(false);
     } catch (err) {
+      const apiErrors = err.response?.data?.errors;
+      if (Array.isArray(apiErrors)) {
+        const mapped = {};
+        apiErrors.forEach((item) => {
+          if (item?.field) mapped[item.field] = item.message;
+        });
+        setFormErrors(mapped);
+      }
       alert(err.response?.data?.message || 'Error saving package');
     } finally {
       setSubmitting(false);
@@ -235,15 +283,48 @@ export default function ManagePackages() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Title *</label>
-                  <input type="text" value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))} className="input" required />
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, title: value }));
+                      setFormErrors((prev) => ({ ...prev, title: '' }));
+                    }}
+                    className="input"
+                    required
+                  />
+                  {formErrors.title && <p className="text-xs text-red-600 mt-1">{formErrors.title}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Destination *</label>
-                  <input type="text" value={form.destination} onChange={(e) => setForm(p => ({ ...p, destination: e.target.value }))} className="input" required />
+                  <input
+                    type="text"
+                    value={form.destination}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, destination: value }));
+                      setFormErrors((prev) => ({ ...prev, destination: '' }));
+                    }}
+                    className="input"
+                    required
+                  />
+                  {formErrors.destination && <p className="text-xs text-red-600 mt-1">{formErrors.destination}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Country *</label>
-                  <input type="text" value={form.country} onChange={(e) => setForm(p => ({ ...p, country: e.target.value }))} className="input" required />
+                  <input
+                    type="text"
+                    value={form.country}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, country: value }));
+                      setFormErrors((prev) => ({ ...prev, country: '' }));
+                    }}
+                    className="input"
+                    required
+                  />
+                  {formErrors.country && <p className="text-xs text-red-600 mt-1">{formErrors.country}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Category *</label>
@@ -253,11 +334,35 @@ export default function ManagePackages() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Price (NPR) *</label>
-                  <input type="number" value={form.price} onChange={(e) => setForm(p => ({ ...p, price: e.target.value }))} className="input" required min={0} />
+                  <input
+                    type="number"
+                    value={form.price}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, price: value }));
+                      setFormErrors((prev) => ({ ...prev, price: '' }));
+                    }}
+                    className="input"
+                    required
+                    min={0}
+                  />
+                  {formErrors.price && <p className="text-xs text-red-600 mt-1">{formErrors.price}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Duration (days) *</label>
-                  <input type="number" value={form.duration} onChange={(e) => setForm(p => ({ ...p, duration: e.target.value }))} className="input" required min={1} />
+                  <input
+                    type="number"
+                    value={form.duration}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, duration: value }));
+                      setFormErrors((prev) => ({ ...prev, duration: '' }));
+                    }}
+                    className="input"
+                    required
+                    min={1}
+                  />
+                  {formErrors.duration && <p className="text-xs text-red-600 mt-1">{formErrors.duration}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Package Images</label>
@@ -281,7 +386,18 @@ export default function ManagePackages() {
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Description *</label>
-                  <textarea value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} className="input resize-none" rows={3} required />
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, description: value }));
+                      setFormErrors((prev) => ({ ...prev, description: '' }));
+                    }}
+                    className="input resize-none"
+                    rows={3}
+                    required
+                  />
+                  {formErrors.description && <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>}
                 </div>
 
                 {/* Itinerary */}

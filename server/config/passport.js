@@ -23,9 +23,10 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-const callbackURL =
-  process.env.GOOGLE_CALLBACK_URL ||
-  `${process.env.SERVER_URL || 'http://localhost:8080'}/api/auth/google/callback`;
+const serverOrigin = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 8080}`;
+const callbackURL = process.env.GOOGLE_CALLBACK_URL || `${serverOrigin}/api/auth/google/callback`;
+
+console.log(`[oauth] Google callback URL: ${callbackURL}`);
 
 passport.use(
   new GoogleStrategy(

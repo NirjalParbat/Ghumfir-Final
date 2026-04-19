@@ -86,7 +86,17 @@ export default function ManageBookings() {
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900">NPR {b.totalPrice?.toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <div className="text-xs text-gray-600 capitalize">{b.paymentMethod}</div>
-                    <span className={`badge text-xs ${b.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : b.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`badge text-xs ${
+                      b.paymentStatus === 'paid'
+                        ? 'bg-green-100 text-green-700'
+                        : b.paymentStatus === 'pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : b.paymentStatus === 'failed'
+                            ? 'bg-red-100 text-red-700'
+                            : b.paymentStatus === 'refunded'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-gray-100 text-gray-600'
+                    }`}>
                       {b.paymentStatus}
                     </span>
                   </td>
@@ -103,12 +113,20 @@ export default function ManageBookings() {
                           Confirm
                         </button>
                       )}
-                      {b.paymentStatus === 'pending' && b.paymentMethod === 'cash' && (
+                      {b.paymentStatus === 'pending' && b.paymentMethod === 'cash' && b.bookingStatus !== 'cancelled' && (
                         <button
                           onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'paid' })}
                           className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                         >
                           Mark Paid
+                        </button>
+                      )}
+                      {b.bookingStatus === 'cancelled' && b.paymentStatus === 'paid' && (
+                        <button
+                          onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'refunded' })}
+                          className="text-xs px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                        >
+                          Mark Refunded
                         </button>
                       )}
                       {b.bookingStatus === 'confirmed' && (
