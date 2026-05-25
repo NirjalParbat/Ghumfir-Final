@@ -10,7 +10,7 @@ Final project submission for a full-stack MERN tourism platform.
 | Backend | Node.js, Express.js |
 | Database | MongoDB, Mongoose |
 | Authentication | JWT, bcryptjs |
-| Payments | Khalti simulation, Card simulation, Cash |
+| Payments | Khalti sandbox, Card simulation, Cash |
 
 ## Local Setup
 
@@ -85,7 +85,7 @@ App URLs:
 - Review and rating system
 - Admin dashboard modules
 - Responsive UI
-- Smart filtering with linear search and bubble sort algorithms
+- Smart filtering with algorithms
 - Password reset via secure email tokens
 
 ## Forgot & Reset Password Flow
