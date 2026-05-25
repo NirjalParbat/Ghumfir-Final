@@ -4,15 +4,15 @@
  * Displays all available tour packages with advanced filtering and sorting capabilities.
  * 
  * Features:
- * - Linear search filtering by 7 criteria (destination, category, price, rating, duration, budget, search text)
- * - Bubble sort with 7 sorting modes (new, old, price asc/desc, duration asc/desc, rating)
+ * - Content recommendation filtering by 7 criteria (destination, category, price, rating, duration, budget, search text)
+ * - Rate-calculation sorting with 7 sorting modes (new, old, price asc/desc, duration asc/desc, rating)
  * - Collapsible filter panel with real-time updates using useMemo for optimization
  * - Responsive grid layout for package cards
  * 
  * Data flow:
  * 1. Fetch all packages on mount
- * 2. Apply filters using linearFilterTours() - O(n) single pass
- * 3. Apply sorting using bubbleSortTours() - O(n²) nested loops
+ * 2. Apply filters using contentRecommendationTours() - O(n) single pass + recommendation score
+ * 3. Apply sorting using calculateRateSortTours() - O(n log n) rate-based ordering
  * 4. Display filtered/sorted results in responsive grid
  */
 
@@ -40,21 +40,21 @@ const getBudgetBucket = (price) => {
 };
 
 /**
- * LINEAR SEARCH ALGORITHM
+ * CONTENT RECOMMENDATION ALGORITHM
  * Time Complexity: O(n*m) where n = number of packages, m = filter criteria
  * 
- * Filters tour packages by iterating through all packages once and applying filters sequentially:
+ * Filters and ranks tour packages by iterating through all packages once and applying:
  * 1. Destination matching
  * 2. Activity category matching
  * 3. Price range (minPrice <= price <= maxPrice)
  * 4. Minimum rating threshold
  * 5. Duration range (minDuration <= duration <= maxDuration)
  * 6. Budget bucket (budget, standard, premium)
- * 7. Search text matching across title, destination, country, category, description
+ * 7. Search relevance score across title, destination, country, category, description
  * 
- * Returns array of packages that match ALL filter criteria (AND logic)
+ * Returns array of packages that match ALL filter criteria, ranked by content score when search text exists.
  */
-const linearFilterTours = ({
+const contentRecommendationTours = ({
   tours,
   search,
   destination,
@@ -74,7 +74,7 @@ const linearFilterTours = ({
   const maxDurationValue = maxDuration === '' ? Number.POSITIVE_INFINITY : Number(maxDuration);
   const results = [];
 
-  // Single pass through all packages
+  // Single pass through all packages with recommendation scoring
   for (let i = 0; i < tours.length; i += 1) {
     const tour = tours[i];
     const tourPrice = Number(tour.price) || 0;
@@ -88,23 +88,48 @@ const linearFilterTours = ({
     if (tourDuration < minDurationValue || tourDuration > maxDurationValue) continue;
     if (budget && getBudgetBucket(Number(tour.price) || 0) !== budget) continue;
 
+    let recommendationScore = 0;
     if (normalizedSearch) {
-      const searchableText = `${tour.title || ''} ${tour.destination || ''} ${tour.country || ''} ${tour.category || ''} ${tour.description || ''}`.toLowerCase();
-      if (!searchableText.includes(normalizedSearch)) continue;
+      const tokens = normalizedSearch.split(/\s+/).filter(Boolean);
+      const titleText = (tour.title || '').toLowerCase();
+      const destinationText = (tour.destination || '').toLowerCase();
+      const countryText = (tour.country || '').toLowerCase();
+      const categoryText = (tour.category || '').toLowerCase();
+      const descriptionText = (tour.description || '').toLowerCase();
+
+      if (titleText.includes(normalizedSearch)) recommendationScore += 8;
+      if (destinationText.includes(normalizedSearch)) recommendationScore += 6;
+
+      for (let t = 0; t < tokens.length; t += 1) {
+        const token = tokens[t];
+        if (titleText.includes(token)) recommendationScore += 5;
+        if (destinationText.includes(token)) recommendationScore += 4;
+        if (countryText.includes(token)) recommendationScore += 3;
+        if (categoryText.includes(token)) recommendationScore += 2;
+        if (descriptionText.includes(token)) recommendationScore += 1;
+      }
+
+      if (recommendationScore <= 0) continue;
     }
 
-    results.push(tour);
+    results.push({ tour, recommendationScore });
   }
 
-  return results;
+  if (!normalizedSearch) {
+    return results.map((item) => item.tour);
+  }
+
+  return results
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .map((item) => item.tour);
 };
 
 /**
- * BUBBLE SORT ALGORITHM
- * Time Complexity: O(n²) - Worst and average case
+ * RATE CALCULATION ALGORITHM
+ * Time Complexity: O(n log n)
  * Space Complexity: O(n) - Creates sorted copy of array
  * 
- * Sorts tour packages using nested-loop bubble sort.
+ * Sorts tour packages by calculating a rate value per item based on selected sort mode.
  * Supports 7 sort modes:
  * - 'newest': Most recently created first (descending date)
  * - 'oldest': Oldest created first (ascending date)
@@ -114,43 +139,28 @@ const linearFilterTours = ({
  * - 'duration-desc': Longest duration first
  * - 'rating-desc': Highest rating first
  * 
- * Process: Compare adjacent elements and swap if condition is met,
- * repeat until entire array is sorted.
+ * Process: Calculate sortable rate for each item, then perform a single array sort.
  */
-const bubbleSortTours = (tours, sortBy) => {
+const calculateRateSortTours = (tours, sortBy) => {
   if (!sortBy) return tours;
 
-  const sorted = [...tours];
+  const getRate = (tour) => {
+    const price = Number(tour.price) || 0;
+    const duration = Number(tour.duration) || 0;
+    const rating = Number(tour.rating) || 0;
+    const createdAt = new Date(tour.createdAt || 0).getTime();
 
-  // Outer loop: controls number of passes through array
-  for (let i = 0; i < sorted.length - 1; i += 1) {
-    // Inner loop: compares adjacent pairs and swaps if needed
-    for (let j = 0; j < sorted.length - i - 1; j += 1) {
-      const leftPrice = Number(sorted[j].price) || 0;
-      const rightPrice = Number(sorted[j + 1].price) || 0;
-      const leftDuration = Number(sorted[j].duration) || 0;
-      const rightDuration = Number(sorted[j + 1].duration) || 0;
-      const leftRating = Number(sorted[j].rating) || 0;
-      const rightRating = Number(sorted[j + 1].rating) || 0;
-      const leftCreatedAt = new Date(sorted[j].createdAt || 0).getTime();
-      const rightCreatedAt = new Date(sorted[j + 1].createdAt || 0).getTime();
+    if (sortBy === 'newest') return createdAt;
+    if (sortBy === 'oldest') return -createdAt;
+    if (sortBy === 'price-asc') return -price;
+    if (sortBy === 'price-desc') return price;
+    if (sortBy === 'duration-asc') return -duration;
+    if (sortBy === 'duration-desc') return duration;
+    if (sortBy === 'rating-desc') return rating;
+    return createdAt;
+  };
 
-      let shouldSwap = false;
-      if (sortBy === 'newest') shouldSwap = leftCreatedAt < rightCreatedAt;
-      if (sortBy === 'oldest') shouldSwap = leftCreatedAt > rightCreatedAt;
-      if (sortBy === 'price-asc') shouldSwap = leftPrice > rightPrice;
-      if (sortBy === 'price-desc') shouldSwap = leftPrice < rightPrice;
-      if (sortBy === 'duration-asc') shouldSwap = leftDuration > rightDuration;
-      if (sortBy === 'duration-desc') shouldSwap = leftDuration < rightDuration;
-      if (sortBy === 'rating-desc') shouldSwap = leftRating < rightRating;
-
-      if (shouldSwap) {
-        [sorted[j], sorted[j + 1]] = [sorted[j + 1], sorted[j]];
-      }
-    }
-  }
-
-  return sorted;
+  return [...tours].sort((a, b) => getRate(b) - getRate(a));
 };
 
 export default function Tours() {
@@ -202,7 +212,7 @@ export default function Tours() {
   }, [allTours]);
 
   const tours = useMemo(() => {
-    const filtered = linearFilterTours({
+    const filtered = contentRecommendationTours({
       tours: allTours,
       search,
       destination,
@@ -215,7 +225,7 @@ export default function Tours() {
       budget,
     });
 
-    return bubbleSortTours(filtered, sortBy);
+    return calculateRateSortTours(filtered, sortBy);
   }, [allTours, search, destination, category, minPrice, maxPrice, minRating, minDuration, maxDuration, budget, sortBy]);
 
   const clearAllFilters = () => {
@@ -236,7 +246,7 @@ export default function Tours() {
       <div className="bg-white border-b border-brand-border py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-text mb-1">Explore Tour Packages</h1>
-          <p className="text-brand-muted text-sm mb-6">Smart filtering with linear scan and bubble sort ordering.</p>
+          <p className="text-brand-muted text-sm mb-6">Smart filtering with content recommendation and rate calculation ordering.</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_220px] gap-3 items-center">
             <div className="relative min-w-0">

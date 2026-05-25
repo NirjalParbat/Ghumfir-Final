@@ -1,59 +1,49 @@
 import Package from '../models/Package.model.js';
 
-const linearSearchTours = (tours, keyword) => {
-  const matches = [];
+const contentRecommendationTours = (tours, keyword) => {
   const searchTerm = keyword.toLowerCase();
+  const tokens = searchTerm.split(/\s+/).filter(Boolean);
 
-  console.log(`[LinearSearch] Searching for: "${searchTerm}"`);
+  const scored = tours
+    .map((tour) => {
+      const titleText = (tour.title || '').toLowerCase();
+      const destinationText = (tour.destination || '').toLowerCase();
+      const countryText = (tour.country || '').toLowerCase();
+      const categoryText = (tour.category || '').toLowerCase();
+      const descriptionText = (tour.description || '').toLowerCase();
 
-  tours.forEach((tour, index) => {
-    const titleText = (tour.title || '').toLowerCase();
-    const locationText = (tour.destination || '').toLowerCase();
-    const titleMatch = titleText.includes(searchTerm);
-    const locationMatch = locationText.includes(searchTerm);
+      let score = 0;
+      if (titleText.includes(searchTerm)) score += 8;
+      if (destinationText.includes(searchTerm)) score += 6;
 
-    console.log(
-      `[LinearSearch] Compare ${index + 1}: title="${tour.title}" destination="${tour.destination}" -> titleMatch=${titleMatch}, locationMatch=${locationMatch}`
-    );
-
-    if (titleMatch || locationMatch) {
-      console.log(`[LinearSearch] Match found: ${tour.title}`);
-      matches.push(tour);
-    }
-  });
-
-  return matches;
-};
-
-const bubbleSortToursByPrice = (tours, order) => {
-  const sortedTours = [...tours];
-  const shouldSortAscending = order === 'asc';
-
-  console.log(`[BubbleSort] Sorting by price in ${order} order`);
-
-  for (let i = 0; i < sortedTours.length - 1; i += 1) {
-    for (let j = 0; j < sortedTours.length - i - 1; j += 1) {
-      const leftPrice = Number(sortedTours[j].price);
-      const rightPrice = Number(sortedTours[j + 1].price);
-      const shouldSwap = shouldSortAscending ? leftPrice > rightPrice : leftPrice < rightPrice;
-
-      console.log(
-        `[BubbleSort] Compare ${j + 1}: ${sortedTours[j].title} (${leftPrice}) vs ${sortedTours[j + 1].title} (${rightPrice}) -> swap=${shouldSwap}`
-      );
-
-      if (shouldSwap) {
-        console.log(`[BubbleSort] Swap: ${sortedTours[j].title} <-> ${sortedTours[j + 1].title}`);
-        const temp = sortedTours[j];
-        sortedTours[j] = sortedTours[j + 1];
-        sortedTours[j + 1] = temp;
+      for (let i = 0; i < tokens.length; i += 1) {
+        const token = tokens[i];
+        if (titleText.includes(token)) score += 5;
+        if (destinationText.includes(token)) score += 4;
+        if (countryText.includes(token)) score += 3;
+        if (categoryText.includes(token)) score += 2;
+        if (descriptionText.includes(token)) score += 1;
       }
-    }
-  }
 
-  return sortedTours;
+      return { tour, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.tour);
+
+  return scored;
 };
 
-// @desc    Get all tours with linear search and bubble sort
+const rateCalculationSortToursByPrice = (tours, order) => {
+  const getRate = (tour) => {
+    const price = Number(tour.price) || 0;
+    return order === 'asc' ? -price : price;
+  };
+
+  return [...tours].sort((a, b) => getRate(b) - getRate(a));
+};
+
+// @desc    Get all tours with content recommendation and rate-calculation sorting
 // @route   GET /api/packages
 export const getTours = async (req, res) => {
   try {
@@ -64,11 +54,11 @@ export const getTours = async (req, res) => {
 
     let filteredTours = allTours;
     if (searchKeyword) {
-      filteredTours = linearSearchTours(allTours, searchKeyword);
+      filteredTours = contentRecommendationTours(allTours, searchKeyword);
     }
 
     if (sortPrice === 'asc' || sortPrice === 'desc') {
-      filteredTours = bubbleSortToursByPrice(filteredTours, sortPrice);
+      filteredTours = rateCalculationSortToursByPrice(filteredTours, sortPrice);
     }
 
     res.json({

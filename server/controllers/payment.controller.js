@@ -5,7 +5,7 @@ import axios from 'axios';
 // @route   POST /api/payments/khalti/verify
 export const verifyKhaltiPayment = async (req, res) => {
   try {
-    const { token, amount, bookingId } = req.body;
+    const { pidx, bookingId } = req.body;
 
     const booking = await Booking.findById(bookingId);
     if (!booking) {
@@ -20,31 +20,43 @@ export const verifyKhaltiPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Booking is already paid' });
     }
 
-    if (Number(amount) !== Number(booking.totalPrice)) {
-      return res.status(400).json({ success: false, message: 'Payment amount does not match booking total' });
-    }
-
-    // Verify with Khalti API
+    // Verify with Khalti ePayment lookup
     const response = await axios.post(
-      'https://khalti.com/api/v2/payment/verify/',
-      { token, amount },
+      'https://a.khalti.com/api/v2/epayment/lookup/',
+      { pidx },
       {
         headers: {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
+          'Content-Type': 'application/json',
         },
       }
     );
 
-    if (response.data.idx) {
+    const status = response.data?.status;
+    const totalAmount = Number(response.data?.total_amount || 0);
+    const expectedAmount = Number(booking.totalPrice) * 100;
+
+    if (status !== 'Completed') {
+      return res.status(400).json({ success: false, message: 'Payment is not completed' });
+    }
+
+    if (totalAmount !== expectedAmount) {
+      return res.status(400).json({ success: false, message: 'Payment amount does not match booking total' });
+    }
+
+    if (response.data?.pidx || response.data?.transaction_id) {
       const updatedBooking = await Booking.findByIdAndUpdate(
         bookingId,
         {
           paymentStatus: 'paid',
           bookingStatus: 'confirmed',
-          khaltiTransactionId: response.data.idx,
+          khaltiTransactionId: response.data.transaction_id || response.data.pidx,
         },
         { new: true }
       );
+      if (updatedBooking) {
+        await updatedBooking.populate('package', 'title');
+      }
       return res.json({ success: true, message: 'Payment verified', booking: updatedBooking });
     }
 

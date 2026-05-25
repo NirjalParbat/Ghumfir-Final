@@ -65,6 +65,11 @@ export const paymentAPI = {
   simulateCard: (data) => API.post('/payments/card/simulate', data),
 };
 
+// Khalti (ePayment)
+export const khaltiAPI = {
+  initiate: (data) => API.post('/khalti/initiate', data),
+};
+
 // Image Upload (Cloudinary)
 export const uploadAPI = {
   uploadImages: (formData) =>

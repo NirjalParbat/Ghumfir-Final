@@ -139,8 +139,7 @@ export const paymentValidation = [
 ];
 
 export const khaltiValidation = [
-  body('token').isString().isLength({ min: 8, max: 512 }).withMessage('token is invalid'),
-  body('amount').isInt({ min: 1 }).withMessage('amount must be a positive integer').toInt(),
+  body('pidx').isString().isLength({ min: 8, max: 512 }).withMessage('pidx is invalid'),
   ...paymentValidation,
 ];
 

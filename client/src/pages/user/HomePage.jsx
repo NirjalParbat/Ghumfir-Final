@@ -155,7 +155,7 @@ export default function HomePage() {
                 className="relative h-48 sm:h-60 md:h-72 rounded-2xl overflow-hidden group"
               >
                 <img
-                   src={DESTINATION_IMAGES[dest.destination] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80'}
+                   src={dest.packageImage || DESTINATION_IMAGES[dest.destination] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80'}
                    alt={dest.destination}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"
                 />

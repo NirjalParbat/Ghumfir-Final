@@ -19,6 +19,7 @@ import reviewRoutes from './routes/review.routes.js';
 import userRoutes from './routes/user.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import khaltiRoutes from './routes/khalti.routes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '.env') });
@@ -139,6 +140,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/khalti', khaltiRoutes);
 
 app.get('/', (req, res) => {
   res.json({

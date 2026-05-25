@@ -1,9 +1,10 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { packageAPI, bookingAPI, paymentAPI } from '../../api/index.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import KhaltiButton from './KhaltiButton.jsx';
 import {
-  MapPin, Clock, Users, CreditCard, Wallet, DollarSign,
+  MapPin, Clock, Users, CreditCard, Wallet, DollarSign, Loader2,
   CheckCircle, AlertCircle, ArrowRight, ShieldCheck,
 } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
@@ -20,6 +21,8 @@ export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState('');
+  const [khaltiStatus, setKhaltiStatus] = useState('');
+  const khaltiStatusTimeout = useRef(null);
 
   const [form, setForm] = useState({
     travelDate: '',
@@ -67,14 +70,38 @@ export default function BookingPage() {
     }
   };
 
+  const handleKhaltiError = (err) => {
+    setError(err?.response?.data?.message || err?.message || 'Khalti payment failed');
+    setKhaltiStatus('');
+  };
+
+  const handleKhaltiStart = () => {
+    setError('');
+    setKhaltiStatus('Preparing Khalti checkout...');
+    if (khaltiStatusTimeout.current) {
+      clearTimeout(khaltiStatusTimeout.current);
+    }
+    khaltiStatusTimeout.current = setTimeout(() => {
+      setKhaltiStatus('');
+    }, 6000);
+  };
+
+  const handleKhaltiRedirect = () => {
+    setKhaltiStatus('Redirecting to Khalti...');
+  };
+
+  useEffect(() => () => {
+    if (khaltiStatusTimeout.current) {
+      clearTimeout(khaltiStatusTimeout.current);
+    }
+  }, []);
+
   const handlePayment = async () => {
     setError('');
     setSubmitting(true);
     try {
       if (form.paymentMethod === 'card') {
         await paymentAPI.simulateCard({ bookingId: booking._id, cardNumber: form.cardNumber });
-      } else if (form.paymentMethod === 'khalti') {
-        await paymentAPI.simulateCard({ bookingId: booking._id, cardNumber: '1234567890123456' });
       }
       setStep(3);
     } catch (err) {
@@ -279,15 +306,23 @@ export default function BookingPage() {
                       Total: <strong>NPR {totalPrice.toLocaleString()}</strong>
                     </p>
                     <p className="text-xs text-purple-500 mb-6 max-w-xs mx-auto">
-                      Khalti payment gateway launches here in production. Click below to simulate.
+                      You will be redirected to Khalti to complete the payment.
                     </p>
-                    <button
-                      onClick={handlePayment}
-                      disabled={submitting}
+                    <KhaltiButton
+                      bookingId={booking?._id}
+                      purchaseOrderName={pkg.title}
+                      disabled={submitting || !booking}
+                      onError={handleKhaltiError}
+                      onStart={handleKhaltiStart}
+                      onRedirect={handleKhaltiRedirect}
                       className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50"
-                    >
-                      {submitting ? 'Processing...' : 'Simulate Khalti Payment'}
-                    </button>
+                    />
+                    {khaltiStatus && (
+                      <p className="text-xs text-purple-600 mt-3 flex items-center justify-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        {khaltiStatus}
+                      </p>
+                    )}
                   </div>
                 )}
 

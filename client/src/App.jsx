@@ -15,6 +15,7 @@ import RegisterPage from './pages/user/RegisterPage.jsx';
 import OAuthCallbackPage from './pages/user/OAuthCallbackPage.jsx';
 import ForgotPasswordPage from './pages/user/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/user/ResetPasswordPage.jsx';
+import PaymentSuccess from './pages/user/PaymentSuccess.jsx';
 
 // Protected Pages
 import BookingPage from './pages/user/BookingPage.jsx';
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
 
             {/* Protected User Routes */}
             <Route path="/book/:id" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
