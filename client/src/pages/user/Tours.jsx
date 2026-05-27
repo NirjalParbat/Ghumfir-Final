@@ -179,6 +179,22 @@ export default function Tours() {
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
+    const payload = {
+      search,
+      destination,
+      category,
+      budget,
+      minPrice,
+      maxPrice,
+      minRating,
+      minDuration,
+      maxDuration,
+      updatedAt: Date.now(),
+    };
+    localStorage.setItem('ghumfir_last_search', JSON.stringify(payload));
+  }, [search, destination, category, budget, minPrice, maxPrice, minRating, minDuration, maxDuration]);
+
+  useEffect(() => {
     const loadTours = async () => {
       setLoading(true);
       try {

@@ -457,6 +457,10 @@ export default function AdminDashboard() {
       .slice(0, 5)
   ), [filteredBookings]);
 
+  const revenueChangeLabel = revenueComparison.previousRevenue > 0
+    ? `${revenueComparison.percentage >= 0 ? '+' : ''}${Math.abs(revenueComparison.percentage).toFixed(1)}%`
+    : null;
+
   const STAT_CARDS = [
     {
       label: 'Total Revenue',
@@ -465,7 +469,7 @@ export default function AdminDashboard() {
       accentClass: 'stat-bar-success',
       iconBg: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
-      change: '+12%',
+      change: revenueChangeLabel,
     },
     {
       label: 'Pending Revenue',

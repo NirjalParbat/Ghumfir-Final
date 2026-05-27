@@ -186,22 +186,22 @@ EMAIL_PASS=your_app_password
 EMAIL_FROM_NAME=Ghumfir
 ```
 
-## Smart Filters Algorithm
+## Recommendation and Rating Algorithms
 
-The Tours page implements two key algorithms:
+The Tours page uses two key algorithms:
 
-### Linear Search
-Iterates through packages once, applying multiple filter conditions sequentially:
-- Destination filter
-- Activity category filter
-- Duration range filter
-- Rating threshold filter
-- Price range filter
-- Search text matching
+### Content Recommendation
+Builds a personalized list by analyzing user behavior and preferences:
+- Recent searches, viewed packages, and bookings
+- Preferred destinations and categories
+- Budget range and duration tendencies
+- Prior ratings and interactions
 
-### Bubble Sort
-Nested-loop sorting for organizing results:
-- **Sort by Price:** Ascending or descending
-- **Sort by Duration:** Ascending or descending
-- **Sort by Rating:** Descending
-- **Sort by Created Date:** Newest or oldest first
+Packages are scored against the user's behavior profile, and the highest scoring results are shown first to improve relevance and discovery.
+
+### Average Rating Calculation
+Computes the tour rating from user reviews and star scores:
+- Sum all valid star ratings for the tour
+- Divide by the number of reviews to get the average rating
+
+This produces a consistent rating value used in listings and recommendations.

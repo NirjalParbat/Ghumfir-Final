@@ -14,16 +14,32 @@ export default function ManageBookings() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const fetchBookings = () => {
-    const params = filter ? { status: filter } : {};
+    const params = {
+      page,
+      limit,
+      ...(filter ? { status: filter } : {}),
+    };
+    setLoading(true);
     bookingAPI.getAll(params)
-      .then(({ data }) => setBookings(data.bookings))
+      .then(({ data }) => {
+        setBookings(data.bookings);
+        setTotal(data.total || 0);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchBookings(); }, [filter]);
+  useEffect(() => { fetchBookings(); }, [filter, page, limit]);
+
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(total / limit));
+    if (page > pageCount) setPage(pageCount);
+  }, [total, limit, page]);
 
   const handleStatusUpdate = async (id, updates) => {
     try {
@@ -39,11 +55,15 @@ export default function ManageBookings() {
     b.package?.title?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const pageCount = Math.max(1, Math.ceil(total / limit));
+  const startIndex = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endIndex = Math.min(page * limit, total);
+
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-gray-900">Manage Bookings</h1>
-        <p className="text-sm text-gray-500">{bookings.length} total bookings</p>
+        <p className="text-sm text-gray-500">{total} total bookings</p>
       </div>
 
       <div className="flex flex-wrap gap-2 sm:gap-3 mb-5">
@@ -51,12 +71,31 @@ export default function ManageBookings() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by user or package..." className="input pl-9" />
         </div>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="input w-full sm:w-auto">
+        <select
+          value={filter}
+          onChange={(e) => {
+            setFilter(e.target.value);
+            setPage(1);
+          }}
+          className="input w-full sm:w-auto"
+        >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
           <option value="completed">Completed</option>
+        </select>
+        <select
+          value={limit}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setPage(1);
+          }}
+          className="input w-full sm:w-auto"
+        >
+          {[10, 20, 50, 100].map((size) => (
+            <option key={size} value={size}>Show {size}</option>
+          ))}
         </select>
       </div>
 
@@ -121,6 +160,26 @@ export default function ManageBookings() {
                           Mark Paid
                         </button>
                       )}
+                      {b.paymentMethod === 'khalti' && b.bookingStatus !== 'cancelled' && (
+                        <>
+                          {b.paymentStatus !== 'paid' && (
+                            <button
+                              onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'paid', bookingStatus: 'confirmed' })}
+                              className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+                          {b.paymentStatus === 'failed' && (
+                            <button
+                              onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'pending' })}
+                              className="text-xs px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+                            >
+                              Mark Unpaid
+                            </button>
+                          )}
+                        </>
+                      )}
                       {b.bookingStatus === 'cancelled' && b.paymentStatus === 'paid' && (
                         <button
                           onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'refunded' })}
@@ -146,6 +205,29 @@ export default function ManageBookings() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+        <div className="text-xs text-gray-500">
+          Showing {startIndex}-{endIndex} of {total}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1 || loading}
+            className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-xs text-gray-500">Page {page} of {pageCount}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            disabled={page >= pageCount || loading}
+            className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

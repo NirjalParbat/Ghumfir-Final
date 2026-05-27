@@ -7,6 +7,7 @@ import {
 import { packageAPI, bookingAPI } from '../../api/index.js';
 import PackageCard from '../../components/common/PackageCard.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=1800&q=90';
 
@@ -34,32 +35,151 @@ const STATS = [
   { value: '2+',   label: 'Years Experience' },
 ];
 
+const getBudgetBucket = (price) => {
+  if (price < 15000) return 'budget';
+  if (price <= 50000) return 'standard';
+  return 'premium';
+};
+
+const readLastSearch = () => {
+  try {
+    const raw = localStorage.getItem('ghumfir_last_search');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const scoreSearchText = (pkg, search) => {
+  const normalized = search.trim().toLowerCase();
+  if (!normalized) return 0;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const titleText = (pkg.title || '').toLowerCase();
+  const destinationText = (pkg.destination || '').toLowerCase();
+  const countryText = (pkg.country || '').toLowerCase();
+  const categoryText = (pkg.category || '').toLowerCase();
+  const descriptionText = (pkg.description || '').toLowerCase();
+
+  let score = 0;
+  if (titleText.includes(normalized)) score += 8;
+  if (destinationText.includes(normalized)) score += 6;
+
+  for (let t = 0; t < tokens.length; t += 1) {
+    const token = tokens[t];
+    if (titleText.includes(token)) score += 5;
+    if (destinationText.includes(token)) score += 4;
+    if (countryText.includes(token)) score += 3;
+    if (categoryText.includes(token)) score += 2;
+    if (descriptionText.includes(token)) score += 1;
+  }
+
+  return score;
+};
+
+const buildRecommendations = ({ packages, lastSearch, bookings, limit = 5 }) => {
+  const bookingCategories = new Set();
+  const bookingDestinations = new Set();
+  const bookingBudgets = new Set();
+  const bookedIds = new Set();
+
+  bookings.forEach((booking) => {
+    const pkg = booking.package || booking.packageId;
+    const pkgId = typeof pkg === 'string' ? pkg : pkg?._id;
+    if (pkgId) bookedIds.add(pkgId);
+    if (pkg?.category) bookingCategories.add(pkg.category);
+    if (pkg?.destination) bookingDestinations.add(pkg.destination);
+    if (pkg?.price !== undefined) bookingBudgets.add(getBudgetBucket(Number(pkg.price) || 0));
+  });
+
+  const minPriceValue = lastSearch?.minPrice ? Number(lastSearch.minPrice) : null;
+  const maxPriceValue = lastSearch?.maxPrice === '' || lastSearch?.maxPrice === undefined
+    ? null
+    : Number(lastSearch.maxPrice);
+
+  const scored = packages
+    .filter((pkg) => pkg?.isActive !== false)
+    .filter((pkg) => !bookedIds.has(pkg._id))
+    .map((pkg) => {
+      let score = 0;
+
+      if (lastSearch?.destination && pkg.destination === lastSearch.destination) score += 6;
+      if (lastSearch?.category && pkg.category === lastSearch.category) score += 6;
+      if (lastSearch?.budget && getBudgetBucket(Number(pkg.price) || 0) === lastSearch.budget) score += 3;
+      if (minPriceValue !== null || maxPriceValue !== null) {
+        const price = Number(pkg.price) || 0;
+        const minOk = minPriceValue === null || price >= minPriceValue;
+        const maxOk = maxPriceValue === null || price <= maxPriceValue;
+        if (minOk && maxOk) score += 2;
+      }
+      if (lastSearch?.search) score += scoreSearchText(pkg, lastSearch.search);
+
+      if (bookingCategories.has(pkg.category)) score += 4;
+      if (bookingDestinations.has(pkg.destination)) score += 4;
+      if (bookingBudgets.has(getBudgetBucket(Number(pkg.price) || 0))) score += 2;
+
+      return { pkg, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.pkg);
+
+  return scored.slice(0, limit);
+};
+
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featured, setFeatured] = useState([]);
   const [topDestinations, setTopDestinations] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [featuredRes, destRes] = await Promise.all([
+        setLoading(true);
+        setRecommendationsLoading(true);
+        const [featuredRes, destRes, allPackagesRes] = await Promise.all([
           packageAPI.getFeatured(),
-           bookingAPI.getTopDestinations(4),
+          bookingAPI.getTopDestinations(4),
+          packageAPI.getAll(),
         ]);
 
         setFeatured(featuredRes.data.packages || []);
         setTopDestinations(destRes.data.destinations || []);
+
+        let bookings = [];
+        if (user) {
+          try {
+            const bookingRes = await bookingAPI.getMyBookings();
+            bookings = bookingRes.data.bookings || [];
+          } catch (error) {
+            console.error('Error fetching user bookings:', error);
+          }
+        }
+
+        const lastSearch = readLastSearch();
+        const allPackages = allPackagesRes.data.packages || [];
+        const recommendations = buildRecommendations({
+          packages: allPackages,
+          lastSearch,
+          bookings,
+          limit: 5,
+        });
+
+        setRecommended(recommendations);
       } catch (error) {
         console.error('Error fetching home data:', error);
       } finally {
         setLoading(false);
+        setRecommendationsLoading(false);
       }
     };
 
     fetchHomeData();
-  }, []);
+  }, [user]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -210,6 +330,45 @@ export default function HomePage() {
             <div className="text-center py-20 surface rounded-3xl">
               <Compass className="w-12 h-12 text-primary-200 mx-auto mb-4" />
               <p className="text-brand-muted mb-4">No featured packages yet. Check back soon!</p>
+              <Link to="/packages" className="btn-primary-navy">Browse All Packages</Link>
+            </div>
+          )}
+
+          <div className="text-center mt-8 sm:hidden">
+            <Link to="/packages" className="btn-outline">View All Packages</Link>
+          </div>
+        </div>
+      </section>
+
+      {/*
+          RECOMMENDED FOR YOU
+       */}
+      <section className="py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-12 gap-4">
+            <div>
+              <p className="section-label"><TrendingUp className="w-3.5 h-3.5" /> Recommended for You</p>
+              <h2 className="section-title mb-2">Packages You May Like</h2>
+              <p className="section-subtitle">Based on your searches and bookings.</p>
+            </div>
+            <Link
+              to="/packages"
+              className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-accent-500 transition-colors"
+            >
+              View all packages <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {recommendationsLoading ? (
+            <LoadingSpinner />
+          ) : recommended.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommended.map((pkg) => <PackageCard key={pkg._id} pkg={pkg} />)}
+            </div>
+          ) : (
+            <div className="text-center py-20 surface rounded-3xl">
+              <Compass className="w-12 h-12 text-primary-200 mx-auto mb-4" />
+              <p className="text-brand-muted mb-4">No recommendations yet. Try searching for packages.</p>
               <Link to="/packages" className="btn-primary-navy">Browse All Packages</Link>
             </div>
           )}
