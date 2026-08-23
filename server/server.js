@@ -26,6 +26,8 @@ dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'http://localhost:5173',
@@ -76,7 +78,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 10 * 60 * 1000, // 10 minutes — just enough for OAuth redirect round-trip

@@ -5,7 +5,10 @@ const DEFAULT_DEV_PORTS = [8080, 8081, 8082, 8083, 8084, 8085];
 
 const getFixedBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL?.trim();
-  if (envUrl) return envUrl;
+  if (envUrl) {
+    const normalizedUrl = envUrl.replace(/\/+$/, '');
+    return normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
+  }
 
   return null;
 };

@@ -50,6 +50,24 @@ export default function ManageBookings() {
     }
   };
 
+  const handlePaymentStatusUpdate = (booking, nextPaymentStatus) => {
+    const updates = { paymentStatus: nextPaymentStatus };
+
+    if (nextPaymentStatus === 'paid' && (booking.bookingStatus === 'pending' || booking.bookingStatus === 'cancelled')) {
+      updates.bookingStatus = 'confirmed';
+    }
+
+    if (nextPaymentStatus === 'pending' && booking.bookingStatus === 'cancelled') {
+      updates.bookingStatus = 'pending';
+    }
+
+    if (nextPaymentStatus === 'refunded' && booking.bookingStatus !== 'cancelled') {
+      updates.bookingStatus = 'cancelled';
+    }
+
+    handleStatusUpdate(booking._id, updates);
+  };
+
   const filtered = bookings.filter((b) =>
     b.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
     b.package?.title?.toLowerCase().includes(search.toLowerCase())
@@ -152,37 +170,25 @@ export default function ManageBookings() {
                           Confirm
                         </button>
                       )}
-                      {b.paymentStatus === 'pending' && b.paymentMethod === 'cash' && b.bookingStatus !== 'cancelled' && (
+                      {b.paymentStatus !== 'paid' && (
                         <button
-                          onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'paid' })}
+                          onClick={() => handlePaymentStatusUpdate(b, 'paid')}
                           className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                         >
                           Mark Paid
                         </button>
                       )}
-                      {b.paymentMethod === 'khalti' && b.bookingStatus !== 'cancelled' && (
-                        <>
-                          {b.paymentStatus !== 'paid' && (
-                            <button
-                              onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'paid', bookingStatus: 'confirmed' })}
-                              className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                            >
-                              Mark Paid
-                            </button>
-                          )}
-                          {b.paymentStatus === 'failed' && (
-                            <button
-                              onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'pending' })}
-                              className="text-xs px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
-                            >
-                              Mark Unpaid
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {b.bookingStatus === 'cancelled' && b.paymentStatus === 'paid' && (
+                      {b.paymentStatus !== 'pending' && (
                         <button
-                          onClick={() => handleStatusUpdate(b._id, { paymentStatus: 'refunded' })}
+                          onClick={() => handlePaymentStatusUpdate(b, 'pending')}
+                          className="text-xs px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+                        >
+                          Mark Unpaid
+                        </button>
+                      )}
+                      {b.paymentStatus !== 'refunded' && (
+                        <button
+                          onClick={() => handlePaymentStatusUpdate(b, 'refunded')}
                           className="text-xs px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                         >
                           Mark Refunded
