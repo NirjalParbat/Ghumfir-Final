@@ -24,17 +24,30 @@ const getHostCandidates = () => {
 };
 
 const probeHealth = async (baseUrl) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1500);
+
   try {
-    const response = await fetch(`${baseUrl}/health`, { method: "GET" });
+    const response = await fetch(`${baseUrl}/health`, {
+      method: "GET",
+      signal: controller.signal,
+    });
     return response.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 };
 
 export const discoverApiBase = async () => {
   const fixedBaseUrl = getFixedBaseUrl();
   if (fixedBaseUrl) return fixedBaseUrl;
+
+  // Production must use VITE_API_URL; only probe local ports during development.
+  if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+    return "/api";
+  }
 
   const cached = localStorage.getItem(API_PORT_CACHE_KEY);
   if (cached && (await probeHealth(cached))) {
