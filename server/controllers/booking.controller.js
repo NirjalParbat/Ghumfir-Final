@@ -27,15 +27,14 @@ export const createBooking = async (req, res) => {
 
     const user = await User.findById(req.user._id).select('name email');
     if (user?.email) {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: `Booking Confirmed - ${pkg.title}`,
-          html: bookingConfirmationEmail(user, booking, pkg),
-        });
-      } catch (emailError) {
+      // Do not make booking creation wait for a third-party SMTP server.
+      sendEmail({
+        to: user.email,
+        subject: `Booking Confirmed - ${pkg.title}`,
+        html: bookingConfirmationEmail(user, booking, pkg),
+      }).catch((emailError) => {
         console.error('booking email error:', emailError);
-      }
+      });
     }
 
     res.status(201).json({ success: true, message: 'Booking created successfully', booking });
