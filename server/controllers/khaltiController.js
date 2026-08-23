@@ -27,15 +27,30 @@ export const initializeKhaltiPayment = async (req, res) => {
     }
 
     const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+    let clientOrigin;
+    try {
+      clientOrigin = new URL(clientUrl).origin;
+    } catch {
+      return res.status(500).json({ message: 'CLIENT_URL is not a valid URL' });
+    }
+
+    if (!process.env.KHALTI_SECRET_KEY || process.env.KHALTI_SECRET_KEY === 'your_khalti_secret_key') {
+      return res.status(500).json({ message: 'KHALTI_SECRET_KEY is not configured on the server' });
+    }
+
     const returnUrl = `${clientUrl}/payment-success?bookingId=${encodeURIComponent(bookingId)}`;
     const amountPaisa = Math.round(Number(booking.totalPrice || 0) * 100);
     const orderName = purchase_order_name || booking.package?.title || 'Ghumfir Booking';
+
+    if (!Number.isInteger(amountPaisa) || amountPaisa <= 0) {
+      return res.status(400).json({ message: 'Booking amount must be greater than zero' });
+    }
 
     const response = await axios.post(
       "https://a.khalti.com/api/v2/epayment/initiate/",
       {
         return_url: returnUrl,
-        website_url: clientUrl,
+        website_url: clientOrigin,
         amount: amountPaisa, // paisa
         purchase_order_id: bookingId,
         purchase_order_name: orderName,
@@ -53,8 +68,10 @@ export const initializeKhaltiPayment = async (req, res) => {
   } catch (error) {
     console.log(error.response?.data || error.message);
 
-    res.status(500).json({
-      message: "Khalti payment initialization failed",
+    res.status(error.response?.status || 502).json({
+      message: error.response?.data?.detail
+        || error.response?.data?.message
+        || "Khalti payment initialization failed",
     });
   }
 };
