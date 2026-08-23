@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 /**
  * Creates a nodemailer transporter configured with SMTP settings from environment variables
@@ -19,6 +19,28 @@ const createTransporter = () => {
   });
 };
 
+export const verifyEmailTransport = async () => {
+  const missing = ["EMAIL_HOST", "EMAIL_USER", "EMAIL_PASS"].filter(
+    (name) => !process.env[name],
+  );
+
+  if (missing.length) {
+    console.warn(
+      `Email is disabled. Missing Render variables: ${missing.join(", ")}`,
+    );
+    return false;
+  }
+
+  try {
+    await createTransporter().verify();
+    console.log(`Email SMTP connection verified: ${process.env.EMAIL_HOST}`);
+    return true;
+  } catch (error) {
+    console.error("Email SMTP verification failed:", error.message);
+    return false;
+  }
+};
+
 /**
  * Sends an email using nodemailer
  * @param {object} options - Email options
@@ -28,21 +50,33 @@ const createTransporter = () => {
  * Requirements: EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS must be set in .env
  */
 export const sendEmail = async ({ to, subject, html }) => {
+  if (
+    !process.env.EMAIL_HOST ||
+    !process.env.EMAIL_USER ||
+    !process.env.EMAIL_PASS
+  ) {
+    throw new Error(
+      "EMAIL_HOST, EMAIL_USER, and EMAIL_PASS must be configured",
+    );
+  }
+
   const transporter = createTransporter();
 
-  await transporter.sendMail({
-    from: `"${process.env.EMAIL_FROM_NAME || 'Ghumfir'}" <${process.env.EMAIL_USER}>`,
+  const info = await transporter.sendMail({
+    from: `"${process.env.EMAIL_FROM_NAME || "Ghumfir"}" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
   });
+
+  console.log(`Booking email sent to ${to}: ${info.messageId}`);
 };
 
 export const bookingConfirmationEmail = (user, booking, pkg) => {
-  const travelDate = new Date(booking.travelDate).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const travelDate = new Date(booking.travelDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
   const totalPeople = booking.numberOfPeople;

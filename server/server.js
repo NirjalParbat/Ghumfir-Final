@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { logAuditEvent } from './utils/auditLogger.js';
+import { verifyEmailTransport } from './utils/sendEmail.js';
 import { createRateLimiter } from './middleware/rateLimit.middleware.js';
 import './config/passport.js'; // registers Google strategy as side-effect
 import passport from 'passport';
@@ -23,6 +24,8 @@ import khaltiRoutes from './routes/khalti.routes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '.env') });
+
+verifyEmailTransport();
 
 const app = express();
 
