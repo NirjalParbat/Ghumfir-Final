@@ -43,6 +43,7 @@ export default function BookingPage() {
   }, [id]);
 
   const totalPrice = pkg ? pkg.price * form.numberOfPeople : 0;
+  const khaltiAmountAllowed = totalPrice > 0;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -305,13 +306,19 @@ export default function BookingPage() {
                     <p className="text-sm text-purple-600 mb-5">
                       Total: <strong>NPR {totalPrice.toLocaleString()}</strong>
                     </p>
-                    <p className="text-xs text-purple-500 mb-6 max-w-xs mx-auto">
-                      You will be redirected to Khalti to complete the payment.
-                    </p>
+                    {!khaltiAmountAllowed ? (
+                      <p className="text-xs text-red-600 mb-6 max-w-xs mx-auto">
+                        The booking amount must be greater than zero to use Khalti.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-purple-500 mb-6 max-w-xs mx-auto">
+                        You will be redirected to Khalti to complete the payment.
+                      </p>
+                    )}
                     <KhaltiButton
                       bookingId={booking?._id}
                       purchaseOrderName={pkg.title}
-                      disabled={submitting || !booking}
+                      disabled={submitting || !booking || !khaltiAmountAllowed}
                       onError={handleKhaltiError}
                       onStart={handleKhaltiStart}
                       onRedirect={handleKhaltiRedirect}
