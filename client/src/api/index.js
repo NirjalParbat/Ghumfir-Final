@@ -67,7 +67,7 @@ export const paymentAPI = {
 
 // Khalti (ePayment)
 export const khaltiAPI = {
-  initiate: (data) => API.post('/khalti/initiate', data),
+  initiate: (data) => API.post('/khalti/initiate', data, { timeout: 60000 }),
 };
 
 // Image Upload (Cloudinary)

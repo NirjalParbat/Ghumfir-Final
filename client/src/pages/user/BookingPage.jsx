@@ -82,8 +82,8 @@ export default function BookingPage() {
       clearTimeout(khaltiStatusTimeout.current);
     }
     khaltiStatusTimeout.current = setTimeout(() => {
-      setKhaltiStatus('');
-    }, 6000);
+      setKhaltiStatus('The server is waking up. Please keep this page open...');
+    }, 8000);
   };
 
   const handleKhaltiRedirect = () => {
